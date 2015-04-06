@@ -8,9 +8,6 @@ jQuery($ => {
 
   function formSubmit(ev) : boolean {
 
-    ev.preventDefault();
-    ev.stopPropagation();
-
     if ( 0 === $( 'input.card-connect-token' ).size()){
 
       let creditCard = $form.find('.wc-credit-card-form-card-number').val();

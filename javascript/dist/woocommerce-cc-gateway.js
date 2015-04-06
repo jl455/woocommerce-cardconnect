@@ -4,8 +4,6 @@ jQuery(function ($) {
     var cc = new woocommerce_card_connect_1.default($);
     var $form = $('form.checkout');
     function formSubmit(ev) {
-        ev.preventDefault();
-        ev.stopPropagation();
         if (0 === $('input.card-connect-token').size()) {
             var creditCard = $form.find('.wc-credit-card-form-card-number').val();
             if (!creditCard) {
