@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CardConnect JS Tests</title>
+  <link rel="stylesheet" href="../node_modules/mocha/mocha.css">
+</head>
+<body>
+  <div id="mocha"><p><a href=".">Index</a></p></div>
+  <div id="messages"></div>
+  <div id="fixtures"></div>
+  <script src="/wp-includes/js/jquery/jquery.js"></script>
+  <script src="../node_modules/mocha/mocha.js"></script>
+  <script src="../node_modules/chai/chai.js"></script>
+  <script src="dist/woocommerce-cc-gateway.js"></script>
+  <script>mocha.setup('bdd');</script>
+  <script src="spec/bundle/woocommerce-card-connect.spec.js"></script>
+  <script>mocha.run();</script>
+</body>
+</html>
