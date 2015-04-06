@@ -1,14 +1,11 @@
 === CardConnect Payment Gateway ===
 Contributors: Swingline0
-Donate link: http://sofcorp.comdonate/
 Tags: woocommerce, payment, gateway
 Requires at least: 3.5
 Tested up to: 3.9.2
 Stable tag: 0.0.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
-
-Accept credit card payments in your WooCommerce store!
 
 == Description ==
 
