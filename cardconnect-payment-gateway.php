@@ -254,7 +254,7 @@ function CardConnectPaymentGateway_init(){
 				// Remove cart
 				$woocommerce->cart->empty_cart();
 
-				$order->add_order_note(sprintf(__( 'CardConnect payment approved (ID: %s)', 'woocommerce'), $response['retref']));
+				$order->add_order_note(sprintf(__( 'CardConnect payment approved (ID: %s, Authcode: %s)', 'woocommerce'), $response['retref'], $response['authcode']));
 
 				// Return thankyou redirect
 				return array(
