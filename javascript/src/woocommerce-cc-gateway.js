@@ -1,6 +1,6 @@
 var woocommerce_card_connect_1 = require("./woocommerce-card-connect");
 jQuery(function ($) {
-    var cc = new woocommerce_card_connect_1.default($);
+    var cc = new woocommerce_card_connect_1.default($, Boolean(wooCardConnect.isLive));
     var $form = $('form.checkout');
     function formSubmit(ev) {
         if (0 === $('input.card-connect-token').size()) {

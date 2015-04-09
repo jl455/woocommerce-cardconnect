@@ -307,6 +307,11 @@ function CardConnectPaymentGateway_init(){
 		 */
 		public function payment_fields(){
 			wp_enqueue_script('woocommerce-cardconnect');
+			wp_localize_script('woocommerce-cardconnect', 'wooCardConnect',
+				array(
+					'isLive' => $this->sandbox === 'no' ? true : false
+				)
+			);
 
 			$fields = array(
 				'card-number-field' => '<p class="form-row form-row-wide">

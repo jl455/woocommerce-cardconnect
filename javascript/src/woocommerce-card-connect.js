@@ -1,7 +1,7 @@
 var WoocommereCardConnect = (function () {
-    function WoocommereCardConnect(jQuery) {
+    function WoocommereCardConnect(jQuery, isLive) {
         var _this = this;
-        this.baseUrl = 'https://fts.prinpay.com/cardsecure/cs?action=CE&type=json';
+        if (isLive === void 0) { isLive = true; }
         this.getToken = function (number, callback) {
             if (!_this.validateCard(number))
                 return callback(null, 'Invalid Credit Card Number');
@@ -27,6 +27,7 @@ var WoocommereCardConnect = (function () {
             return callback(null, 'Failed to connect to server');
         };
         this.$ = jQuery;
+        this.baseUrl = "https://fts.cardconnect.com:" + (isLive ? '8443' : '6443') + "/cardsecure/cs?action=CE&type=json";
     }
     return WoocommereCardConnect;
 })();

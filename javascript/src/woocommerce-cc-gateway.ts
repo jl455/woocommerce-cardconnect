@@ -1,9 +1,10 @@
 declare let jQuery : any;
+declare let wooCardConnect : any;
 import WoocommereCardConnect from "./woocommerce-card-connect";
 
 jQuery($ => {
 
-  let cc = new WoocommereCardConnect($);
+  let cc = new WoocommereCardConnect($, Boolean(wooCardConnect.isLive));
   let $form = $('form.checkout');
 
   function formSubmit(ev) : boolean {

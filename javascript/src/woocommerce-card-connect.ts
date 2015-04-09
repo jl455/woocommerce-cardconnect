@@ -3,11 +3,12 @@ declare let jQuery : any;
 export default class WoocommereCardConnect {
 
   $ : any;
-  baseUrl = 'https://fts.prinpay.com/cardsecure/cs?action=CE&type=json';
+  baseUrl : string;
   cardNumber : string;
 
-  constructor(jQuery : any){
+  constructor(jQuery : any, isLive = true){
     this.$ = jQuery;
+    this.baseUrl = `https://fts.cardconnect.com:${isLive ? '8443' : '6443'}/cardsecure/cs?action=CE&type=json`;
   }
 
   public getToken = (number : string, callback : any) => {
