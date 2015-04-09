@@ -221,28 +221,56 @@ function CardConnectPaymentGateway_init(){
 			$token = isset( $_POST['card_connect_token'] ) ? wc_clean( $_POST['card_connect_token'] ) : false;
 
 			if(!$token){
-				wc_add_notice(__('Payment error:', 'woothemes') . 'Please make sure your card details have been entered correctly and that your browser supports JavaScript.', 'error');
+				wc_add_notice(__('Payment error: ', 'woothemes') . 'Please make sure your card details have been entered correctly and that your browser supports JavaScript.', 'error');
 				return;
 			}
 
-			 // Payment Failed!
-			 $order->update_status('failed', __('Payment Failed', 'cardconnect-payment-gateway'));
-			 wc_add_notice( __('Payment error:', 'woothemes') . 'Card Error', 'error' );
-			 return;
-
-			$order->payment_complete();
-
-			// Reduce stock levels
-			$order->reduce_order_stock();
-
-			// Remove cart
-			$woocommerce->cart->empty_cart();
-
-			// Return thankyou redirect
-			return array(
-				'result' => 'success',
-				'redirect' => $this->get_return_url($order)
+			$request = array(
+				'merchid'   => $this->api_credentials['mid'],
+				'account'   => $token,
+				'expiry'    => preg_replace('/[^\d]/i','', wc_clean($_POST['card_connect-card-expiry'])),
+				'cvv2'      => wc_clean($_POST['card_connect-card-cvc']),
+				'amount'    => $woocommerce->cart->total * 100,
+				'currency'  => "USD",
+				'orderid'   => $order->id,
+				'name'      => trim( $order->billing_first_name . ' ' . $order->billing_last_name ),
+				'street'    => $order->billing_address_1,
+				'city'      => $order->billing_city,
+				'region'    => $order->billing_state,
+				'country'   => $order->billing_country,
+				'postal'    => $order->billing_postcode,
+				'capture'   => $this->mode === 'capture' ? 'Y' : 'N',
 			);
+
+			$response = $this->get_cc_client()->authorizeTransaction($request);
+
+			if('A' === $response['respstat']){
+
+				$order->payment_complete();
+
+				// Reduce stock levels
+				$order->reduce_order_stock();
+
+				// Remove cart
+				$woocommerce->cart->empty_cart();
+
+				$order->add_order_note(sprintf(__( 'CardConnect payment approved (ID: %s)', 'woocommerce'), $response['retref']));
+
+				// Return thankyou redirect
+				return array(
+					'result' => 'success',
+					'redirect' => $this->get_return_url($order)
+				);
+
+			}else if('C' === $response['respstat']){
+				wc_add_notice(__('Payment error: ', 'woothemes') . 'Order Declined : ' . $response['resptext'], 'error');
+			}else{
+				wc_add_notice(__('Payment error: ', 'woothemes') . 'An error prevented this transaction from completing. Please confirm your information and try again.', 'error');
+			}
+
+			$order->update_status('failed', __('Payment Failed', 'cardconnect-payment-gateway'));
+			return;
+
 		}
 
 		/**
