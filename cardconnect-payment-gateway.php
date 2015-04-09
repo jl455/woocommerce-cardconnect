@@ -72,6 +72,9 @@ function CardConnectPaymentGateway_init(){
 			add_action('wp_enqueue_scripts', array( $this, 'register_scripts'));
 			add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
 			add_action('woocommerce_thankyou_CardConnectPaymentGateway', array($this, 'thankyou_page'));
+
+			// Append local includes dir to include path
+			set_include_path(get_include_path() . PATH_SEPARATOR . plugin_dir_path(__FILE__) . 'includes');
 		}
 
 		/**
