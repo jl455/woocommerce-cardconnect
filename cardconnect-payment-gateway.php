@@ -63,9 +63,6 @@ function CardConnectPaymentGateway_init(){
 			// Load user options
 			$this->load_options();
 
-			// Instantiate SDK for CardConnect
-			$this->init_cc_sdk();
-
 			// Actions
 			add_action('wp_enqueue_scripts', array( $this, 'register_scripts'));
 			add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -77,10 +74,16 @@ function CardConnectPaymentGateway_init(){
 		 *
 		 * @return void
 		 */
-		protected function init_cc_sdk(){
-
-			// @TODO: Load CC SDK stuff here
-
+		protected function get_cc_client(){
+			if(is_null($this->cc_client)){
+				require_once 'rest-client/CardConnectRestClient.php';
+				$this->cc_client = new CardConnectRestClient(
+					$this->api_credentials['url'],
+					$this->api_credentials['user'],
+					$this->api_credentials['pass']
+				);
+			}
+			return $this->cc_client;
 		}
 
 		/**
