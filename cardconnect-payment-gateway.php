@@ -32,7 +32,7 @@ function CardConnectPaymentGateway_init(){
 		private $api_credentials;
 		private $cc_url = array(
 			'sandbox' => 'https://fts.cardconnect.com:6443/cardconnect/rest',
-			'production' => ''
+			'production' => 'https://fts.cardconnect.com:8443/cardconnect/rest'
 		);
 		private $mode;
 
