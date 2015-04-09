@@ -264,8 +264,10 @@ function CardConnectPaymentGateway_init(){
 
 			}else if('C' === $response['respstat']){
 				wc_add_notice(__('Payment error: ', 'woothemes') . 'Order Declined : ' . $response['resptext'], 'error');
+				$order->add_order_note(sprintf(__( 'CardConnect declined transaction. Response: %s', 'woocommerce'), $response['resptext']));
 			}else{
 				wc_add_notice(__('Payment error: ', 'woothemes') . 'An error prevented this transaction from completing. Please confirm your information and try again.', 'error');
+				$order->add_order_note(sprintf(__( 'CardConnect failed transaction. Response: %s', 'woocommerce'), $response['resptext']));
 			}
 
 			$order->update_status('failed', __('Payment Failed', 'cardconnect-payment-gateway'));
