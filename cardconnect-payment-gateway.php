@@ -28,8 +28,13 @@ function CardConnectPaymentGateway_init(){
 	 */
 	class CardConnectPaymentGateway extends WC_Payment_Gateway {
 
-		const CC_TEST_URL = 'fts.cardconnect.com:6443';
-		const CC_LIVE_URL = '???';
+		private $cc_client = null;
+		private $api_credentials;
+		private $cc_url = array(
+			'sandbox' => 'https://fts.cardconnect.com:6443/cardconnect/rest',
+			'production' => ''
+		);
+		private $mode;
 
 		/**
 		 * Constructor for the gateway.
@@ -103,11 +108,11 @@ function CardConnectPaymentGateway_init(){
 
 			$env_key = $this->sandbox == 'no' ? 'production' : 'sandbox';
 			$this->api_credentials = array(
+				'url' => $this->cc_url[$env_key],
 				'mid' => $this->get_option("{$env_key}_mid"),
 				'user' => $this->get_option("{$env_key}_user"),
-				'pass' => $this->get_option("{$env_key}_mid"),
+				'pass' => $this->get_option("{$env_key}_password"),
 			);
-
 		}
 
 		/**
