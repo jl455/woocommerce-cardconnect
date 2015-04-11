@@ -279,57 +279,33 @@ function CardConnectPaymentGateway_init(){
 		}
 
 		/**
-		 * Output for the order received page.
-		 *
-		 * @return void
-		 */
-		public function thankyou(){
-			if($description = $this->get_description()){
-				echo wpautop(wptexturize(wp_kses_post($description)));
-			}
-
-			echo '<h2>' . __('Our Details', 'cardconnect-payment-gateway') . '</h2>';
-
-			echo '<ul class="order_details CardConnectPaymentGateway_details">';
-
-			$fields = apply_filters('woocommerce_CardConnectPaymentGateway_fields', array(
-				'example_field' => __('Example field', 'cardconnect-payment-gateway')
-			));
-
-			foreach($fields as $key => $value){
-				if(!empty($this->$key)){
-					echo '<li class="' . esc_attr($key) . '">' . esc_attr($value) . ': <strong>' . wptexturize($this->$key) . '</strong></li>';
-				}
-			}
-
-			echo '</ul>';
-		}
-
-		/**
-		 * Output for the order received page.
+		 * Output payment fields and required JS
 		 *
 		 * @return void
 		 */
 		public function payment_fields(){
+
+			$isSandbox = $this->sandbox !== 'no';
+
 			wp_enqueue_script('woocommerce-cardconnect');
 			wp_localize_script('woocommerce-cardconnect', 'wooCardConnect',
 				array(
-					'isLive' => $this->sandbox === 'no' ? true : false
+					'isLive' => !$isSandbox ? true : false
 				)
 			);
 
 			$fields = array(
 				'card-number-field' => '<p class="form-row form-row-wide">
 					<label for="' . esc_attr( $this->id ) . '-card-number">' . __( 'Card Number', 'woocommerce' ) . ' <span class="required">*</span></label>
-					<input id="' . esc_attr( $this->id ) . '-card-number" class="input-text wc-credit-card-form-card-number" type="text" maxlength="20" autocomplete="off" placeholder="•••• •••• •••• ••••" />
+					<input id="' . esc_attr( $this->id ) . '-card-number" class="input-text wc-credit-card-form-card-number" type="text" maxlength="20" autocomplete="off" placeholder="•••• •••• •••• ••••" ' . ($isSandbox ? 'value="4242424242424242"' : '') . '/>
 				</p>',
 				'card-expiry-field' => '<p class="form-row form-row-first">
 					<label for="' . esc_attr( $this->id ) . '-card-expiry">' . __( 'Expiry (MM/YY)', 'woocommerce' ) . ' <span class="required">*</span></label>
-					<input id="' . esc_attr( $this->id ) . '-card-expiry" class="input-text wc-credit-card-form-card-expiry" type="text" autocomplete="off" placeholder="' . __( 'MM / YY', 'woocommerce' ) . '" name="' . $this->id . '-card-expiry" />
+					<input id="' . esc_attr( $this->id ) . '-card-expiry" class="input-text wc-credit-card-form-card-expiry" type="text" autocomplete="off" placeholder="' . __( 'MM / YY', 'woocommerce' ) . '" name="' . $this->id . '-card-expiry" ' . ($isSandbox ? 'value="1225"' : '') . '/>
 				</p>',
 				'card-cvc-field' => '<p class="form-row form-row-last">
 					<label for="' . esc_attr( $this->id ) . '-card-cvc">' . __( 'Card Code', 'woocommerce' ) . ' <span class="required">*</span></label>
-					<input id="' . esc_attr( $this->id ) . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" type="text" autocomplete="off" placeholder="' . __( 'CVC', 'woocommerce' ) . '" name="' . $this->id . '-card-cvc" />
+					<input id="' . esc_attr( $this->id ) . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" type="text" autocomplete="off" placeholder="' . __( 'CVC', 'woocommerce' ) . '" name="' . $this->id . '-card-cvc" ' . ($isSandbox ? 'value="123"' : '') . '/>
 				</p>'
 			);
 
