@@ -1,3 +1,4 @@
+/// <reference path="typings/tsd.d.ts"/>
 var woocommerce_card_connect_1 = require("./woocommerce-card-connect");
 jQuery(function ($) {
     var cc = new woocommerce_card_connect_1.default($, Boolean(wooCardConnect.isLive));

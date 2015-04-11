@@ -1,3 +1,4 @@
+/// <reference path="typings/tsd.d.ts"/>
 declare let jQuery : any;
 declare let wooCardConnect : any;
 import WoocommereCardConnect from "./woocommerce-card-connect";

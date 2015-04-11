@@ -14,6 +14,8 @@
     ],
     "files": [
         "./spec/woocommerce-card-connect.spec.ts",
+        "./src/typings/jquery/jquery.d.ts",
+        "./src/typings/tsd.d.ts",
         "./src/woocommerce-card-connect.ts",
         "./src/woocommerce-cc-gateway.ts"
     ]
