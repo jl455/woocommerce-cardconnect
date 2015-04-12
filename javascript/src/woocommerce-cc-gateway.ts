@@ -12,14 +12,25 @@ jQuery($ => {
 
     if ( 0 === $( 'input.card-connect-token' ).size()){
 
+      $form.block({
+        message: null,
+        overlayCSS: {
+          background: '#fff',
+          opacity: 0.6
+        }
+      });
+
       let creditCard = $form.find('.wc-credit-card-form-card-number').val();
       if(!creditCard){
-        alert('Please enter a credit card number'); // @TODO : Handle error
+        printWooError('Please enter a credit card number');
         return false;
       }
 
       cc.getToken(creditCard, function(token, error){
-        if(error) alert(error); // @TODO : Handle error
+        if(error){
+          printWooError(error);
+          return false;
+        }
         $('<input />')
           .attr('name', 'card_connect_token')
           .attr('type', 'hidden')
@@ -31,6 +42,22 @@ jQuery($ => {
       return false;
     }
     return true;
+  }
+
+  function printWooError(error : string | string[]) : void {
+    $('.woocommerce-error', $form).remove();
+
+    let errorText : string | string[]; // This should only be a string, TS doesn't like the reduce output though
+    if(error.constructor === Array){
+      errorText = Array(error).reduce((prev, curr) => prev += `<li>${curr}</li>`);
+    }else{
+      errorText = error;
+    }
+
+    $form.prepend(`<ul class="woocommerce-error">${errorText}</ul>`);
+
+    $form.unblock();
+    $('html, body').animate({ scrollTop: 0 }, 'slow');
   }
 
   $form.on('checkout_place_order_card_connect', formSubmit);

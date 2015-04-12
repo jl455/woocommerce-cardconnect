@@ -6,14 +6,23 @@ jQuery(function ($) {
     var $form = $('form.checkout');
     function formSubmit(ev) {
         if (0 === $('input.card-connect-token').size()) {
+            $form.block({
+                message: null,
+                overlayCSS: {
+                    background: '#fff',
+                    opacity: 0.6
+                }
+            });
             var creditCard = $form.find('.wc-credit-card-form-card-number').val();
             if (!creditCard) {
-                alert('Please enter a credit card number');
+                printWooError('Please enter a credit card number');
                 return false;
             }
             cc.getToken(creditCard, function (token, error) {
-                if (error)
-                    alert(error);
+                if (error) {
+                    printWooError(error);
+                    return false;
+                }
                 $('<input />')
                     .attr('name', 'card_connect_token')
                     .attr('type', 'hidden')
@@ -25,6 +34,19 @@ jQuery(function ($) {
             return false;
         }
         return true;
+    }
+    function printWooError(error) {
+        $('.woocommerce-error', $form).remove();
+        var errorText;
+        if (error.constructor === Array) {
+            errorText = Array(error).reduce(function (prev, curr) { return prev += "<li>" + curr + "</li>"; });
+        }
+        else {
+            errorText = error;
+        }
+        $form.prepend("<ul class=\"woocommerce-error\">" + errorText + "</ul>");
+        $form.unblock();
+        $('html, body').animate({ scrollTop: 0 }, 'slow');
     }
     $form.on('checkout_place_order_card_connect', formSubmit);
     $('body').on('checkout_error', function () { return $('.card-connect-token').remove(); });
