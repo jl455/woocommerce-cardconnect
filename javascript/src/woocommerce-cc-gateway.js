@@ -17,6 +17,10 @@ jQuery(function ($) {
                 printWooError('Please enter a credit card number');
                 return false;
             }
+            else if (!checkCardType(creditCard)) {
+                printWooError('Credit card type not accepted');
+                return false;
+            }
             cc.getToken(creditCard, function (token, error) {
                 if (error) {
                     printWooError(error);
@@ -33,6 +37,14 @@ jQuery(function ($) {
             return false;
         }
         return true;
+    }
+    function checkCardType(cardNumber) {
+        var cardType = $.payment.cardType(cardNumber);
+        for (var i = 0; i < wooCardConnect.allowedCards.length; i++) {
+            if (wooCardConnect.allowedCards[i] === cardType)
+                return true;
+        }
+        return false;
     }
     function printWooError(error) {
         $('.woocommerce-error', $form).remove();

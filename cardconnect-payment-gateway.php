@@ -35,6 +35,7 @@ function CardConnectPaymentGateway_init(){
 			'production' => 'https://fts.cardconnect.com:8443/cardconnect/rest'
 		);
 		private $mode;
+		private $card_types = array();
 
 		/**
 		 * Constructor for the gateway.
@@ -105,6 +106,7 @@ function CardConnectPaymentGateway_init(){
 
 			$this->title = $this->get_option('title');
 			$this->description = $this->get_option('description');
+			$this->card_types = $this->get_option('card_types');
 			$this->mode = $this->get_option('mode', 'capture');
 
 			$this->sandbox = $this->get_option('sandbox');
@@ -207,6 +209,20 @@ function CardConnectPaymentGateway_init(){
 					'default' => '',
 					'desc_tip' => true
 				),
+				'card_types' => array(
+					'title' => __('Card Types', 'woocommerce'),
+					'type' => 'multiselect',
+					'description' => __('Select the card types to be allowed for transactions', 'woocommerce'),
+					'default' => '',
+					'desc_tip' => true,
+					'options' => array(
+						'visa' => __('Visa', 'woocommerce'),
+						'mastercard' => __('Mastercard', 'woocommerce'),
+						'discover' => __('Discover', 'woocommerce'),
+						'amex' => __('American Express', 'woocommerce')
+					),
+					'default' => array('visa', 'mastercard', 'discover', 'amex'),
+				),
 			);
 		}
 
@@ -287,14 +303,26 @@ function CardConnectPaymentGateway_init(){
 
 			$isSandbox = $this->sandbox !== 'no';
 
+			wp_enqueue_style('woocommerce-cardconnect-paymentform');
 			wp_enqueue_script('woocommerce-cardconnect');
 			wp_localize_script('woocommerce-cardconnect', 'wooCardConnect',
 				array(
-					'isLive' => !$isSandbox ? true : false
+					'isLive' => !$isSandbox ? true : false,
+					'allowedCards' => $this->card_types
 				)
 			);
 
+			$card_icons = array_reduce($this->card_types, function($carry, $card_name){
+				$plugin_path = plugins_url('assets', __FILE__);
+				$carry .= "<li class='card-connect-allowed-card__li'><img class='card-connect-allowed-cards__img' src='$plugin_path/$card_name.png' alt='$card_name'/></li>";
+				return $carry;
+			}, '');
+
 			$fields = array(
+				'card-icons' => '<p class="form-row form-row-wide">
+					<p style="margin: 0 0 5px;">Accepting:</p>
+					<ul class="card-connect-allowed-cards">' . $card_icons . '</ul>
+				</p>',
 				'card-number-field' => '<p class="form-row form-row-wide">
 					<label for="' . esc_attr( $this->id ) . '-card-number">' . __( 'Card Number', 'woocommerce' ) . ' <span class="required">*</span></label>
 					<input id="' . esc_attr( $this->id ) . '-card-number" class="input-text wc-credit-card-form-card-number" type="text" maxlength="20" autocomplete="off" placeholder="•••• •••• •••• ••••" ' . ($isSandbox ? 'value="4242424242424242"' : '') . '/>
@@ -356,6 +384,10 @@ function CardConnectPaymentGateway_init(){
 				'woocommerce-cardconnect',
 				plugins_url('javascript/dist/woocommerce-cc-gateway.js', __FILE__),
 				array('jquery'), '1.0', true
+			);
+			wp_register_style(
+				'woocommerce-cardconnect-paymentform',
+				plugins_url('stylesheets/woocommerce-cc-gateway.css', __FILE__)
 			);
 		}
 

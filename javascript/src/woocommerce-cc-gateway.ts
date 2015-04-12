@@ -24,6 +24,9 @@ jQuery($ => {
       if(!creditCard){
         printWooError('Please enter a credit card number');
         return false;
+      }else if(!checkCardType(creditCard)){
+        printWooError('Credit card type not accepted');
+        return false;
       }
 
       cc.getToken(creditCard, function(token, error){
@@ -42,6 +45,14 @@ jQuery($ => {
       return false;
     }
     return true;
+  }
+
+  function checkCardType(cardNumber : string) : boolean {
+    let cardType = $.payment.cardType(cardNumber);
+    for(let i = 0; i < wooCardConnect.allowedCards.length; i++) {
+      if(wooCardConnect.allowedCards[i] === cardType) return true;
+    }
+    return false;
   }
 
   function printWooError(error : string | string[]) : void {
