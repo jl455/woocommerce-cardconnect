@@ -235,7 +235,7 @@ function CardConnectPaymentGateway_init(){
 				'cvv2'      => wc_clean($_POST['card_connect-card-cvc']),
 				'amount'    => $woocommerce->cart->total * 100,
 				'currency'  => "USD",
-				'orderid'   => $order->id,
+				'orderid'   => sprintf(__('%s - Order #%s', 'woocommerce'), esc_html(get_bloginfo('name', 'display')), $order->get_order_number()),
 				'name'      => trim( $order->billing_first_name . ' ' . $order->billing_last_name ),
 				'street'    => $order->billing_address_1,
 				'city'      => $order->billing_city,
