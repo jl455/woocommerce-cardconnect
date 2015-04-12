@@ -44,8 +44,8 @@ function CardConnectPaymentGateway_init(){
 			$this->id = 'card_connect';
 			$this->icon = apply_filters('woocommerce_CardConnectPaymentGateway_icon', '');
 			$this->has_fields = true;
-			$this->method_title = __('CardConnect Payment Gateway', 'cardconnect-payment-gateway');
-			$this->method_description = __('Payment gateway for CardConnect Payment Processing', 'cardconnect-payment-gateway');
+			$this->method_title = __('CardConnect', 'cardconnect-payment-gateway');
+			$this->method_description = __('Payment gateway for CardConnect', 'cardconnect-payment-gateway');
 			$this->supports = array(
 				'default_credit_card_form',
 				'refunds',
