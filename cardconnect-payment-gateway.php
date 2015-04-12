@@ -249,7 +249,7 @@ function CardConnectPaymentGateway_init(){
 
 			if('A' === $response['respstat']){
 
-				$order->payment_complete();
+				$order->payment_complete($response['retref']);
 
 				// Reduce stock levels
 				$order->reduce_order_stock();
@@ -311,6 +311,41 @@ function CardConnectPaymentGateway_init(){
 
 
 			$this->credit_card_form(null, $fields);
+		}
+
+		/**
+		 * Process refunds
+		 * WooCommerce 2.2 or later
+		 *
+		 * @param  int $order_id
+		 * @param  float $amount
+		 * @param  string $reason
+		 * @uses   Simplify_ApiException
+		 * @uses   Simplify_BadRequestException
+		 * @return bool|WP_Error
+		 */
+		public function process_refund( $order_id, $amount = null, $reason = '' ) {
+
+			$order = new WC_Order($order_id);
+			$retref = get_post_meta($order_id, '_transaction_id', true);
+
+			$request = array(
+				'merchid' => $this->api_credentials['mid'],
+				'amount' => $amount * 100,
+				'currency' => 'USD',
+				'retref' => $retref,
+			);
+
+			$response = $this->get_cc_client()->refundTransaction($request);
+
+			if('A' === $response['respstat']){
+				$order->add_order_note(sprintf(__('CardConnect refunded $%s. Response: %s. Retref: %s', 'woocommerce'), $response['amount'], $response['resptext'], $response['retref']));
+				return true;
+			}else{
+				throw new Exception( __( 'Refund was declined.', 'woocommerce' ) );
+				return false;
+			}
+
 		}
 
 		/**
