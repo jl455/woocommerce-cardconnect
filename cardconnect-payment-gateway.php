@@ -172,6 +172,7 @@ function CardConnectPaymentGateway_init(){
 					'type' => 'text',
 					'description' => __('Platform identifier required to be included in API calls from your ERP application to the CardConnect demo system.  Once your interface is live, you will be assigned a unique id from the processor.  During development and testing, you can use this test merchant id.', 'woocommerce'),
 					'default' => '496160873888',
+					'class' => 'sandbox_input',
 					'desc_tip' => true
 				),
 				'sandbox_user' => array(
@@ -179,6 +180,7 @@ function CardConnectPaymentGateway_init(){
 					'type' => 'text',
 					'description' => __('This is the default information, you may use this or an alternative if provided by CardConnect', 'woocommerce'),
 					'default' => 'testing',
+					'class' => 'sandbox_input',
 					'desc_tip' => true
 				),
 				'sandbox_password' => array(
@@ -186,32 +188,37 @@ function CardConnectPaymentGateway_init(){
 					'type' => 'text',
 					'description' => __('This is the default information, you may use this or an alternative if provided by CardConnect', 'woocommerce'),
 					'default' => 'testing123',
+					'class' => 'sandbox_input',
 					'desc_tip' => true
 				),
 				'production_mid' => array(
-					'title' => __('Merchant ID (MID)', 'woocommerce'),
+					'title' => __('Live Merchant ID (MID)', 'woocommerce'),
 					'type' => 'text',
 					'description' => __('Your unique MID from CardConnect.', 'woocommerce'),
 					'default' => '',
+					'class' => 'production_input',
 					'desc_tip' => true
 				),
 				'production_user' => array(
-					'title' => __('Username', 'woocommerce'),
+					'title' => __('Live Username', 'woocommerce'),
 					'type' => 'text',
 					'description' => __('Enter the credentials obtained from CardConnect', 'woocommerce'),
 					'default' => '',
+					'class' => 'production_input',
 					'desc_tip' => true
 				),
 				'production_password' => array(
-					'title' => __('Password', 'woocommerce'),
+					'title' => __('Live Password', 'woocommerce'),
 					'type' => 'text',
 					'description' => __('Enter the credentials obtained from CardConnect', 'woocommerce'),
 					'default' => '',
+					'class' => 'production_input',
 					'desc_tip' => true
 				),
 				'card_types' => array(
 					'title' => __('Card Types', 'woocommerce'),
 					'type' => 'multiselect',
+					'class' => 'wc-enhanced-select',
 					'description' => __('Select the card types to be allowed for transactions', 'woocommerce'),
 					'default' => '',
 					'desc_tip' => true,
@@ -224,6 +231,36 @@ function CardConnectPaymentGateway_init(){
 					'default' => array('visa', 'mastercard', 'discover', 'amex'),
 				),
 			);
+		}
+
+		/**
+		 * Admin Panel Options
+		 * Include CardConnect logo and add some JS for revealing inputs for sandbox vs production
+		 *
+		 * @access public
+		 * @return void
+		 */
+		public function admin_options(){
+			?>
+			<img style="margin:20px 0 5px 10px" width="200" height="29" src="<?php echo plugins_url('assets/cardconnect-logo.png', __FILE__) ?>" />
+
+			<table class="form-table">
+				<?php $this->generate_settings_html(); ?>
+				<script type="text/javascript">
+					jQuery('#woocommerce_card_connect_sandbox').on('change', function() {
+						var sandbox = jQuery('.sandbox_input').closest('tr');
+						var production = jQuery('.production_input').closest( 'tr' );
+						if(jQuery(this).is(':checked')){
+							sandbox.show();
+							production.hide();
+						}else{
+							sandbox.hide();
+							production.show();
+						}
+					}).change();
+				</script>
+			</table>
+		<?php
 		}
 
 		/**
