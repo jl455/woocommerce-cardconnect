@@ -5,13 +5,19 @@ import WoocommereCardConnect from "./woocommerce-card-connect";
 
 jQuery($ => {
 
-  let cc = new WoocommereCardConnect($, Boolean(wooCardConnect.isLive));
+  let isLive : boolean = Boolean(wooCardConnect.isLive);
+  let cc = new WoocommereCardConnect($, isLive);
   let $form = $('form.checkout');
 
+  // Simulate some text entry to get jQuery Payment to reformat numbers
+  if(!isLive){
+    $( document ).ajaxComplete(function( event,request, settings ) {
+      $form.find('#card_connect-cc-form input').change().keyup();
+    });
+  }
+
   function formSubmit(ev) : boolean {
-
-    if ( 0 === $( 'input.card-connect-token' ).size()){
-
+    if(0 === $('input.card-connect-token').size()){
       $form.block({
         message: null,
         overlayCSS: {
@@ -19,7 +25,6 @@ jQuery($ => {
           opacity: 0.6
         }
       });
-
       let creditCard = $form.find('.wc-credit-card-form-card-number').val();
       if(!creditCard){
         printWooError('Please enter a credit card number');
@@ -28,7 +33,6 @@ jQuery($ => {
         printWooError('Credit card type not accepted');
         return false;
       }
-
       cc.getToken(creditCard, function(token, error){
         if(error){
           printWooError(error);

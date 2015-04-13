@@ -2,8 +2,14 @@
 /// <reference path="typings/tsd.d.ts"/>
 var woocommerce_card_connect_1 = require("./woocommerce-card-connect");
 jQuery(function ($) {
-    var cc = new woocommerce_card_connect_1.default($, Boolean(wooCardConnect.isLive));
+    var isLive = Boolean(wooCardConnect.isLive);
+    var cc = new woocommerce_card_connect_1.default($, isLive);
     var $form = $('form.checkout');
+    if (!isLive) {
+        $(document).ajaxComplete(function (event, request, settings) {
+            $form.find('#card_connect-cc-form input').change().keyup();
+        });
+    }
     function formSubmit(ev) {
         if (0 === $('input.card-connect-token').size()) {
             $form.block({
