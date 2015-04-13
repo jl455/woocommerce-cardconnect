@@ -278,6 +278,18 @@ function CardConnectPaymentGateway_init(){
 							production.show();
 						}
 					}).change();
+					jQuery(function($){
+						$('#mainform').submit(function(){
+							if(!$('#woocommerce_card_connect_sandbox').is(':checked')){
+								var allowSubmit = true;
+								$('.production_input').each(function(){
+									if($(this).val() == '') allowSubmit = false;
+								});
+								if(!allowSubmit) alert('Warning! In order to enter Live Mode you must enter a value for MID, Username, and Password.');
+								return allowSubmit;
+							}
+						});
+					});
 				</script>
 			</table>
 		<?php
