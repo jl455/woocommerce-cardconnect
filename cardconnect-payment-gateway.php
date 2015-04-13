@@ -36,6 +36,7 @@ function CardConnectPaymentGateway_init(){
 		);
 		private $mode;
 		private $card_types = array();
+		private $verification;
 
 		/**
 		 * Constructor for the gateway.
@@ -117,6 +118,11 @@ function CardConnectPaymentGateway_init(){
 				'mid' => $this->get_option("{$env_key}_mid"),
 				'user' => $this->get_option("{$env_key}_user"),
 				'pass' => $this->get_option("{$env_key}_password"),
+			);
+
+			$this->verification = array(
+				'void_cvv' => $this->get_option('void_cvv'),
+				'void_avs' => $this->get_option('void_avs'),
 			);
 		}
 
@@ -230,6 +236,20 @@ function CardConnectPaymentGateway_init(){
 					),
 					'default' => array('visa', 'mastercard', 'discover', 'amex'),
 				),
+				'void_avs' => array(
+					'title' => __('Void on AVS failure', 'woocommerce'),
+					'label' => __('Active', 'woocommerce'),
+					'type' => 'checkbox',
+					'description' => __('Void order if Address and ZIP do not match.', 'woocommerce'),
+					'default' => 'yes',
+				),
+				'void_cvv' => array(
+					'title' => __('Void on CVV failure', 'woocommerce'),
+					'label' => __('Active', 'woocommerce'),
+					'type' => 'checkbox',
+					'description' => __('Void order if CVV2/CVC2/CID does not match', 'woocommerce'),
+					'default' => 'yes',
+				),
 			);
 		}
 
@@ -302,6 +322,27 @@ function CardConnectPaymentGateway_init(){
 
 			if('A' === $response['respstat']){
 
+				$order_verification = $this->verify_customer_data($response);
+				if(!$order_verification['is_valid']){
+
+					$request = array(
+						'merchid' => $this->api_credentials['mid'],
+						'currency' => 'USD',
+						'retref' => $response['retref'],
+					);
+
+					$void_response = $this->get_cc_client()->voidTransaction($request);
+
+					if($void_response['authcode'] === 'REVERS'){
+						$order->update_status('failed', __('Payment Failed', 'cardconnect-payment-gateway'));
+						foreach($order_verification['errors'] as $error){
+							$order->add_order_note(sprintf(__( $error, 'woocommerce')));
+							wc_add_notice(__('Payment error: ', 'woothemes') . $error, 'error');
+						}
+						return;
+					}
+				}
+
 				$order->payment_complete($response['retref']);
 
 				// Reduce stock levels
@@ -329,6 +370,29 @@ function CardConnectPaymentGateway_init(){
 			$order->update_status('failed', __('Payment Failed', 'cardconnect-payment-gateway'));
 			return;
 
+		}
+
+		/**
+		 * Matches response AVS and CVV information against admin preferences
+		 *
+		 * @return array
+		 */
+		private function verify_customer_data($response){
+
+			$error = array();
+
+			if($this->verification['void_cvv'] === 'yes' && $response['cvvresp'] === 'N'){
+				$error[] = 'Error - Invalid CVV. Please confirm the supplied CVV information.';
+			}
+
+			if($this->verification['void_avs'] === 'yes' && $response['avsresp'] === 'N'){
+				$error[] = 'Error - Address verification failed. Please confirm the supplied billing information.';
+			}
+
+			return array(
+				'is_valid' => count($error) === 0,
+				'errors' => $error
+			);
 		}
 
 		/**
