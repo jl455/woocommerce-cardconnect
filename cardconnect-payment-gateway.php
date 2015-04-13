@@ -184,7 +184,7 @@ function CardConnectPaymentGateway_init(){
 				'sandbox_user' => array(
 					'title' => __('Sandbox Username', 'woocommerce'),
 					'type' => 'text',
-					'description' => __('This is the default information, you may use this or an alternative if provided by CardConnect', 'woocommerce'),
+					'description' => __('This is the default information. You may use this or an alternative if provided by CardConnect.', 'woocommerce'),
 					'default' => 'testing',
 					'class' => 'sandbox_input',
 					'desc_tip' => true
@@ -192,7 +192,7 @@ function CardConnectPaymentGateway_init(){
 				'sandbox_password' => array(
 					'title' => __('Sandbox Password', 'woocommerce'),
 					'type' => 'text',
-					'description' => __('This is the default information, you may use this or an alternative if provided by CardConnect', 'woocommerce'),
+					'description' => __('This is the default information. You may use this or an alternative if provided by CardConnect.', 'woocommerce'),
 					'default' => 'testing123',
 					'class' => 'sandbox_input',
 					'desc_tip' => true
@@ -240,14 +240,14 @@ function CardConnectPaymentGateway_init(){
 					'title' => __('Void on AVS failure', 'woocommerce'),
 					'label' => __('Active', 'woocommerce'),
 					'type' => 'checkbox',
-					'description' => __('Void order if Address and ZIP do not match.', 'woocommerce'),
+					'description' => __('Void order if <strong>Address and ZIP</strong> do not match.', 'woocommerce'),
 					'default' => 'yes',
 				),
 				'void_cvv' => array(
 					'title' => __('Void on CVV failure', 'woocommerce'),
 					'label' => __('Active', 'woocommerce'),
 					'type' => 'checkbox',
-					'description' => __('Void order if CVV2/CVC2/CID does not match', 'woocommerce'),
+					'description' => __('Void order if <strong>CVV2/CVC2/CID</strong> does not match.', 'woocommerce'),
 					'default' => 'yes',
 				),
 			);
