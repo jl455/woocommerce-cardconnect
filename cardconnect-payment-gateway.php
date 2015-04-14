@@ -143,14 +143,14 @@ function CardConnectPaymentGateway_init(){
 				'title' => array(
 					'title' => __('Title', 'woocommerce'),
 					'type' => 'text',
-					'description' => __('This controls the title which the user sees during checkout.', 'woocommerce'),
+					'description' => __('This controls the title that the user sees during checkout.', 'woocommerce'),
 					'default' => __('Credit card', 'woocommerce'),
 					'desc_tip' => true
 				),
 				'description' => array(
 					'title' => __('Description', 'woocommerce'),
 					'type' => 'text',
-					'description' => __('This controls the description which the user sees during checkout.', 'woocommerce'),
+					'description' => __('This controls the description that the user sees during checkout.', 'woocommerce'),
 					'default' => 'Payment secured by CardConnect.',
 					'desc_tip' => true
 				),
@@ -176,7 +176,7 @@ function CardConnectPaymentGateway_init(){
 				'sandbox_mid' => array(
 					'title' => __('Sandbox Merchant ID (MID)', 'woocommerce'),
 					'type' => 'text',
-					'description' => __('Platform identifier required to be included in API calls from your ERP application to the CardConnect demo system.  Once your interface is live, you will be assigned a unique id from the processor.  During development and testing, you can use this test merchant id.', 'woocommerce'),
+					'description' => __('This is the default information. You may use this or an alternative if provided by CardConnect.', 'woocommerce'),
 					'default' => '496160873888',
 					'class' => 'sandbox_input',
 					'desc_tip' => true
