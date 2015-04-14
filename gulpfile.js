@@ -1,54 +1,42 @@
 var gulp = require('gulp');
-var browserify = require('browserify');
 var source = require('vinyl-source-stream');
+var notify = require("gulp-notify");
+
+var browserify = require('browserify');
 var watchify = require('watchify');
+var tsify = require('tsify');
 
-gulp.task('browserify', function(){
-  browserifyShare();
+var config = {
+  publicPath : __dirname + '/javascript/dist',
+  source: {
+    path: __dirname + '/javascript/src',
+    main: 'woocommerce-cc-gateway.ts',
+    result: 'woocommerce-cc-gateway.js'
+  }
+};
+
+gulp.task('compile-js', function (){
+  var bundler = browserify(
+    {
+      basedir: config.source.path,
+      cache: {},
+      packageCache: {}
+    })
+    .add(config.source.path + '/' + config.source.main)
+    .plugin(tsify);
+
+  bundler = watchify(bundler);
+
+  var bundle = function(bundler){
+    bundler.bundle()
+      .pipe(source(config.source.result))
+      .pipe(gulp.dest(config.publicPath))
+      .pipe(notify('Bundle re-bundled.'));
+  };
+
+  bundler.on('update', function(){
+    bundle(bundler);
+  });
+
+  bundle(bundler);
 });
-
-gulp.task('browserifyTests', browserifyTests);
-
-function browserifyShare(){
-  // you need to pass these three config option to browserify
-  var b = browserify({
-    cache: {},
-    packageCache: {},
-    fullPaths: true
-  });
-  b = watchify(b);
-  b.on('update', function(){
-    bundleShare(b);
-  });
-
-  b.add('./javascript/src/woocommerce-cc-gateway.js');
-  bundleShare(b);
-}
-
-function bundleShare(b){
-  b.bundle()
-    .pipe(source('woocommerce-cc-gateway.js'))
-    .pipe(gulp.dest('./javascript/dist'));
-}
-
-function browserifyTests(){
-  // you need to pass these three config option to browserify
-  var b = browserify({
-    cache: {},
-    packageCache: {},
-    fullPaths: true
-  });
-  b = watchify(b);
-  b.on('update', function(){
-    bundleTests(b);
-  });
-
-  b.add('./javascript/spec/woocommerce-card-connect.spec.js');
-  bundleTests(b);
-}
-
-function bundleTests(b){
-  b.bundle()
-    .pipe(source('woocommerce-card-connect.spec.js'))
-    .pipe(gulp.dest('./javascript/spec/bundle'));
-}
