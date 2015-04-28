@@ -276,7 +276,16 @@ function CardConnectPaymentGateway_init(){
 		 */
 		public function admin_options(){
 			?>
+
 			<img style="margin:20px 0 5px 10px" width="200" height="29" src="<?php echo plugins_url('assets/cardconnect-logo.png', __FILE__) ?>" />
+
+			<?php if(empty($this->api_credentials['mid'])): ?>
+				<div class="card-connect-banner updated">
+					<p class="main"><h3 style="margin:0;"><?php _e( 'Getting started', 'woocommerce' ); ?></h3></p>
+					<p><?php _e( 'CardConnect is a leading provider of payment processing and technology services that helps more than 50,000 merchants across the U.S. accept billions of dollars in card transactions each year. This Extension from CardConnect helps you accept simple, integrated and secure payments on your Woo Commerce store. Please call 877-828-0720 today to get a Merchant Account!', 'woocommerce' ); ?></p>
+					<p><a href="http://www.cardconnect.com/" target="_blank" class="button button-primary"><?php _e( 'Visit CardConnect', 'woocommerce' ); ?></a> </p>
+				</div>
+			<?php endif; ?>
 
 			<table class="form-table">
 				<?php $this->generate_settings_html(); ?>
