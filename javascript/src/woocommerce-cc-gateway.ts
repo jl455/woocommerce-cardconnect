@@ -1,4 +1,4 @@
-/// <reference path="typings/tsd.d.ts"/>
+/// <reference path="./typings/tsd.d.ts"/>
 declare let jQuery : any;
 declare let wooCardConnect : any;
 import WoocommereCardConnect from "./woocommerce-card-connect";
@@ -6,7 +6,7 @@ import WoocommereCardConnect from "./woocommerce-card-connect";
 jQuery($ => {
 
   let isLive : boolean = Boolean(wooCardConnect.isLive);
-  let cc = new WoocommereCardConnect($, isLive);
+  let cc = new WoocommereCardConnect($, wooCardConnect.apiEndpoint);
   let $form = $('form.checkout');
 
   // Simulate some text entry to get jQuery Payment to reformat numbers

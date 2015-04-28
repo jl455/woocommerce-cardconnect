@@ -1,8 +1,8 @@
-/// <reference path="typings/tsd.d.ts"/>
+/// <reference path="./typings/tsd.d.ts"/>
 var woocommerce_card_connect_1 = require("./woocommerce-card-connect");
 jQuery(function ($) {
     var isLive = Boolean(wooCardConnect.isLive);
-    var cc = new woocommerce_card_connect_1.default($, isLive);
+    var cc = new woocommerce_card_connect_1.default($, wooCardConnect.apiEndpoint);
     var $form = $('form.checkout');
     if (!isLive) {
         $(document).ajaxComplete(function (event, request, settings) {

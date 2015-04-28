@@ -28,13 +28,19 @@ function CardConnectPaymentGateway_init(){
 	 */
 	class CardConnectPaymentGateway extends WC_Payment_Gateway {
 
+		private $domain = 'cardconnect.com';
+		private $rest_path = '/cardconnect/rest';
+		private $cs_path = '/cardsecure/cs';
+		private $cc_ports = array(
+			'sandbox' => '6443',
+			'production' => '8443'
+		);
+
+		private $env_key;
 		private $cc_client = null;
 		private $api_credentials;
-		private $cc_url = array(
-			'sandbox' => 'https://fts.cardconnect.com:6443/cardconnect/rest',
-			'production' => 'https://fts.cardconnect.com:8443/cardconnect/rest'
-		);
 		private $mode;
+		private $site;
 		private $card_types = array();
 		private $verification;
 
@@ -111,13 +117,16 @@ function CardConnectPaymentGateway_init(){
 			$this->mode = $this->get_option('mode', 'capture');
 
 			$this->sandbox = $this->get_option('sandbox');
+			$this->site = $this->get_option('site');
 
-			$env_key = $this->sandbox == 'no' ? 'production' : 'sandbox';
+			$this->env_key = $this->sandbox == 'no' ? 'production' : 'sandbox';
+			$port = $this->cc_ports[$this->env_key];
+
 			$this->api_credentials = array(
-				'url' => $this->cc_url[$env_key],
-				'mid' => $this->get_option("{$env_key}_mid"),
-				'user' => $this->get_option("{$env_key}_user"),
-				'pass' => $this->get_option("{$env_key}_password"),
+				'url' => "https://{$this->site}.{$this->domain}:{$port}{$this->rest_path}",
+				'mid' => $this->get_option("{$this->env_key}_mid"),
+				'user' => $this->get_option("{$this->env_key}_user"),
+				'pass' => $this->get_option("{$this->env_key}_password"),
 			);
 
 			$this->verification = array(
@@ -220,6 +229,11 @@ function CardConnectPaymentGateway_init(){
 					'default' => '',
 					'class' => 'production_input',
 					'desc_tip' => true
+				),
+				'site' => array(
+					'title' => __('Site', 'woocommerce'),
+					'type' => 'text',
+					'description' => __('Enter the site provided to you upon opening your CardConnect merchant account', 'woocommerce'),
 				),
 				'card_types' => array(
 					'title' => __('Card Types', 'woocommerce'),
@@ -415,12 +429,14 @@ function CardConnectPaymentGateway_init(){
 		public function payment_fields(){
 
 			$isSandbox = $this->sandbox !== 'no';
+			$port = $this->cc_ports[$this->env_key];
 
 			wp_enqueue_style('woocommerce-cardconnect-paymentform');
 			wp_enqueue_script('woocommerce-cardconnect');
 			wp_localize_script('woocommerce-cardconnect', 'wooCardConnect',
 				array(
 					'isLive' => !$isSandbox ? true : false,
+					'apiEndpoint' => "https://{$this->site}.{$this->domain}:{$port}{$this->cs_path}",
 					'allowedCards' => $this->card_types
 				)
 			);

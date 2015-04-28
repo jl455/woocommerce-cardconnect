@@ -1,8 +1,7 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var WoocommereCardConnect = (function () {
-    function WoocommereCardConnect(jQuery, isLive) {
+    function WoocommereCardConnect(jQuery, csApiEndpoint) {
         var _this = this;
-        if (isLive === void 0) { isLive = true; }
         this.getToken = function (number, callback) {
             if (!_this.validateCard(number))
                 return callback(null, 'Invalid Credit Card Number');
@@ -12,7 +11,6 @@ var WoocommereCardConnect = (function () {
         };
         this.validateCard = function (number) {
             _this.cardNumber = number;
-            // @TODO : Additional card number validation here maybe?
             return _this.cardNumber.length > 0;
         };
         this.processRequest = function (data, callback) {
@@ -29,20 +27,19 @@ var WoocommereCardConnect = (function () {
             return callback(null, 'Failed to connect to server');
         };
         this.$ = jQuery;
-        this.baseUrl = "https://fts.cardconnect.com:" + (isLive ? '8443' : '6443') + "/cardsecure/cs?action=CE&type=json";
+        this.baseUrl = csApiEndpoint + '?action=CE&type=json';
     }
     return WoocommereCardConnect;
 })();
 exports.default = WoocommereCardConnect;
 
 },{}],2:[function(require,module,exports){
-/// <reference path="typings/tsd.d.ts"/>
+/// <reference path="./typings/tsd.d.ts"/>
 var woocommerce_card_connect_1 = require("./woocommerce-card-connect");
 jQuery(function ($) {
     var isLive = Boolean(wooCardConnect.isLive);
-    var cc = new woocommerce_card_connect_1.default($, isLive);
+    var cc = new woocommerce_card_connect_1.default($, wooCardConnect.apiEndpoint);
     var $form = $('form.checkout');
-    // Simulate some text entry to get jQuery Payment to reformat numbers
     if (!isLive) {
         $(document).ajaxComplete(function (event, request, settings) {
             $form.find('#card_connect-cc-form input').change().keyup();
@@ -93,7 +90,7 @@ jQuery(function ($) {
     }
     function printWooError(error) {
         $('.woocommerce-error', $form).remove();
-        var errorText; // This should only be a string, TS doesn't like the reduce output though
+        var errorText;
         if (error.constructor === Array) {
             errorText = Array(error).reduce(function (prev, curr) { return prev += "<li>" + curr + "</li>"; });
         }

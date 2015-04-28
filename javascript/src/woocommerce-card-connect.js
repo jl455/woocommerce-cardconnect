@@ -1,7 +1,6 @@
 var WoocommereCardConnect = (function () {
-    function WoocommereCardConnect(jQuery, isLive) {
+    function WoocommereCardConnect(jQuery, csApiEndpoint) {
         var _this = this;
-        if (isLive === void 0) { isLive = true; }
         this.getToken = function (number, callback) {
             if (!_this.validateCard(number))
                 return callback(null, 'Invalid Credit Card Number');
@@ -27,7 +26,7 @@ var WoocommereCardConnect = (function () {
             return callback(null, 'Failed to connect to server');
         };
         this.$ = jQuery;
-        this.baseUrl = "https://fts.cardconnect.com:" + (isLive ? '8443' : '6443') + "/cardsecure/cs?action=CE&type=json";
+        this.baseUrl = csApiEndpoint + '?action=CE&type=json';
     }
     return WoocommereCardConnect;
 })();

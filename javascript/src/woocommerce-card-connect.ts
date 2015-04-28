@@ -6,9 +6,9 @@ export default class WoocommereCardConnect {
   baseUrl : string;
   cardNumber : string;
 
-  constructor(jQuery : any, isLive = true){
+  constructor(jQuery : any, csApiEndpoint : string){
     this.$ = jQuery;
-    this.baseUrl = `https://fts.cardconnect.com:${isLive ? '8443' : '6443'}/cardsecure/cs?action=CE&type=json`;
+    this.baseUrl = csApiEndpoint + '?action=CE&type=json';
   }
 
   public getToken = (number : string, callback : any) => {
