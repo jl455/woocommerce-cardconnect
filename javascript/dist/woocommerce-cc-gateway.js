@@ -39,7 +39,7 @@ var woocommerce_card_connect_1 = require("./woocommerce-card-connect");
 jQuery(function ($) {
     var isLive = Boolean(wooCardConnect.isLive);
     var cc = new woocommerce_card_connect_1.default($, wooCardConnect.apiEndpoint);
-    var $form = $('form.checkout');
+    var $form = $('form.checkout, form#order_review');
     if (!isLive) {
         $(document).ajaxComplete(function (event, request, settings) {
             $form.find('#card_connect-cc-form input').change().keyup();
@@ -102,8 +102,9 @@ jQuery(function ($) {
         $('html, body').animate({ scrollTop: 0 }, 'slow');
     }
     $form.on('checkout_place_order_card_connect', formSubmit);
+    $('form#order_review').on('submit', formSubmit);
     $('body').on('checkout_error', function () { return $('.card-connect-token').remove(); });
-    $('form.checkout').on('change', '.wc-credit-card-form-card-number', function () {
+    $form.on('change', '.wc-credit-card-form-card-number', function () {
         $('.card-connect-token').remove();
     });
 });

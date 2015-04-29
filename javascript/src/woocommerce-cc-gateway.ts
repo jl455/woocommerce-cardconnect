@@ -7,7 +7,7 @@ jQuery($ => {
 
   let isLive : boolean = Boolean(wooCardConnect.isLive);
   let cc = new WoocommereCardConnect($, wooCardConnect.apiEndpoint);
-  let $form = $('form.checkout');
+  let $form = $('form.checkout, form#order_review');
 
   // Simulate some text entry to get jQuery Payment to reformat numbers
   if(!isLive){
@@ -75,11 +75,15 @@ jQuery($ => {
     $('html, body').animate({ scrollTop: 0 }, 'slow');
   }
 
+  // Bind Submit Listeners
   $form.on('checkout_place_order_card_connect', formSubmit);
+  $('form#order_review').on('submit', formSubmit);
 
+  // Remove token on checkout err
   $('body').on('checkout_error', () => $('.card-connect-token').remove());
 
-  $('form.checkout').on('change', '.wc-credit-card-form-card-number', () => {
+  // Clear token if form is changed
+  $form.on('change', '.wc-credit-card-form-card-number', () => {
     $('.card-connect-token').remove();
   });
 
