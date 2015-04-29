@@ -4,6 +4,7 @@ jQuery(function ($) {
     var isLive = Boolean(wooCardConnect.isLive);
     var cc = new woocommerce_card_connect_1.default($, wooCardConnect.apiEndpoint);
     var $form = $('form.checkout, form#order_review');
+    var $errors;
     if (!isLive) {
         $(document).ajaxComplete(function (event, request, settings) {
             $form.find('#card_connect-cc-form input').change().keyup();
@@ -53,17 +54,17 @@ jQuery(function ($) {
         return false;
     }
     function printWooError(error) {
-        $('.woocommerce-error', $form).remove();
+        if (!$errors)
+            $errors = $('.js-card-connect-errors', $form);
         var errorText;
         if (error.constructor === Array) {
             errorText = Array(error).reduce(function (prev, curr) { return prev += "<li>" + curr + "</li>"; });
         }
         else {
-            errorText = error;
+            errorText = "<li>" + error + "</li>";
         }
-        $form.prepend("<ul class=\"woocommerce-error\">" + errorText + "</ul>");
+        $errors.html("<ul class=\"woocommerce-error\">" + errorText + "</ul>");
         $form.unblock();
-        $('html, body').animate({ scrollTop: 0 }, 'slow');
     }
     $form.on('checkout_place_order_card_connect', formSubmit);
     $('form#order_review').on('submit', formSubmit);

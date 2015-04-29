@@ -1,6 +1,7 @@
 /// <reference path="./typings/tsd.d.ts"/>
 declare let jQuery : any;
 declare let wooCardConnect : any;
+declare let window : any;
 import WoocommereCardConnect from "./woocommerce-card-connect";
 
 jQuery($ => {
@@ -8,6 +9,7 @@ jQuery($ => {
   let isLive : boolean = Boolean(wooCardConnect.isLive);
   let cc = new WoocommereCardConnect($, wooCardConnect.apiEndpoint);
   let $form = $('form.checkout, form#order_review');
+  let $errors;
 
   // Simulate some text entry to get jQuery Payment to reformat numbers
   if(!isLive){
@@ -60,19 +62,18 @@ jQuery($ => {
   }
 
   function printWooError(error : string | string[]) : void {
-    $('.woocommerce-error', $form).remove();
+
+    if(!$errors) $errors = $('.js-card-connect-errors', $form);
 
     let errorText : string | string[]; // This should only be a string, TS doesn't like the reduce output though
     if(error.constructor === Array){
       errorText = Array(error).reduce((prev, curr) => prev += `<li>${curr}</li>`);
     }else{
-      errorText = error;
+      errorText = `<li>${error}</li>`;
     }
 
-    $form.prepend(`<ul class="woocommerce-error">${errorText}</ul>`);
-
+    $errors.html(`<ul class="woocommerce-error">${errorText}</ul>`);
     $form.unblock();
-    $('html, body').animate({ scrollTop: 0 }, 'slow');
   }
 
   // Bind Submit Listeners

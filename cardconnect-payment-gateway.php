@@ -463,6 +463,7 @@ function CardConnectPaymentGateway_init(){
 				'card-number-field' => '<p class="form-row form-row-wide">
 					<label for="' . esc_attr( $this->id ) . '-card-number">' . __( 'Card Number', 'woocommerce' ) . ' <span class="required">*</span></label>
 					<input id="' . esc_attr( $this->id ) . '-card-number" class="input-text wc-credit-card-form-card-number" type="text" maxlength="20" autocomplete="off" placeholder="•••• •••• •••• ••••" ' . ($isSandbox ? 'value="4242424242424242"' : '') . '/>
+					<div class="js-card-connect-errors"></div>
 				</p>',
 				'card-expiry-field' => '<p class="form-row form-row-first">
 					<label for="' . esc_attr( $this->id ) . '-card-expiry">' . __( 'Expiry (MM/YY)', 'woocommerce' ) . ' <span class="required">*</span></label>
