@@ -239,16 +239,15 @@ function CardConnectPaymentGateway_init(){
 					'title' => __('Card Types', 'woocommerce'),
 					'type' => 'multiselect',
 					'class' => 'wc-enhanced-select',
-					'description' => __('Select the card types to be allowed for transactions', 'woocommerce'),
-					'default' => '',
-					'desc_tip' => true,
+					'default' => array('visa', 'mastercard', 'discover', 'amex'),
+					'description' => __('Select the card types to be allowed for transactions. <strong>This must match your Merchant Agreement.</strong>', 'woocommerce'),
+					'desc_tip' => false,
 					'options' => array(
 						'visa' => __('Visa', 'woocommerce'),
 						'mastercard' => __('Mastercard', 'woocommerce'),
 						'discover' => __('Discover', 'woocommerce'),
 						'amex' => __('American Express', 'woocommerce')
 					),
-					'default' => array('visa', 'mastercard', 'discover', 'amex'),
 				),
 				'void_avs' => array(
 					'title' => __('Void on AVS failure', 'woocommerce'),
