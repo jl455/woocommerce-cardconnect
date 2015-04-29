@@ -186,7 +186,7 @@ function CardConnectPaymentGateway_init(){
 					'title' => __('Sandbox Merchant ID (MID)', 'woocommerce'),
 					'type' => 'text',
 					'description' => __('This is the default information. You may use this or an alternative if provided by CardConnect.', 'woocommerce'),
-					'default' => '496160873888',
+					'default' => '',
 					'class' => 'sandbox_input',
 					'desc_tip' => true
 				),
@@ -194,7 +194,7 @@ function CardConnectPaymentGateway_init(){
 					'title' => __('Sandbox Username', 'woocommerce'),
 					'type' => 'text',
 					'description' => __('This is the default information. You may use this or an alternative if provided by CardConnect.', 'woocommerce'),
-					'default' => 'testing',
+					'default' => '',
 					'class' => 'sandbox_input',
 					'desc_tip' => true
 				),
@@ -202,7 +202,7 @@ function CardConnectPaymentGateway_init(){
 					'title' => __('Sandbox Password', 'woocommerce'),
 					'type' => 'text',
 					'description' => __('This is the default information. You may use this or an alternative if provided by CardConnect.', 'woocommerce'),
-					'default' => 'testing123',
+					'default' => '',
 					'class' => 'sandbox_input',
 					'desc_tip' => true
 				),
