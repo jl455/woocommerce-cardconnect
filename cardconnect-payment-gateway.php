@@ -334,6 +334,8 @@ function CardConnectPaymentGateway_init(){
 				return;
 			}
 
+			$card_name = isset( $_POST['card_connect-card-name'] ) ? wc_clean( $_POST['card_connect-card-name'] ) : false;
+
 			$request = array(
 				'merchid'   => $this->api_credentials['mid'],
 				'account'   => $token,
@@ -342,7 +344,7 @@ function CardConnectPaymentGateway_init(){
 				'amount'    => $order->order_total * 100,
 				'currency'  => "USD",
 				'orderid'   => sprintf(__('%s - Order #%s', 'woocommerce'), esc_html(get_bloginfo('name', 'display')), $order->get_order_number()),
-				'name'      => trim( $order->billing_first_name . ' ' . $order->billing_last_name ),
+				'name'      => $card_name ? $card_name : trim( $order->billing_first_name . ' ' . $order->billing_last_name ),
 				'street'    => $order->billing_address_1,
 				'city'      => $order->billing_city,
 				'region'    => $order->billing_state,
@@ -459,6 +461,10 @@ function CardConnectPaymentGateway_init(){
 				'card-connect-card-icons' => '<p class="form-row form-row-wide">
 					<p style="margin: 0 0 5px;">Accepting:</p>
 					<ul class="card-connect-allowed-cards">' . $card_icons . '</ul>
+				</p>',
+				'card-connect-card-name' => '<p class="form-row form-row-wide">
+					<label for="' . esc_attr( $this->id ) . '-card-name">' . __( 'Cardholder Name (If Different)', 'woocommerce' ) . '</label>
+					<input id="' . esc_attr( $this->id ) . '-card-name" class="input-text " type="text" maxlength="25" name="' . $this->id . '-card-name"/>
 				</p>',
 				'card-connect-card-number-field' => '<p class="form-row form-row-wide">
 					<label for="' . esc_attr( $this->id ) . '-card-number">' . __( 'Card Number', 'woocommerce' ) . ' <span class="required">*</span></label>
