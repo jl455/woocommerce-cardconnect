@@ -340,7 +340,7 @@ function CardConnectPaymentGateway_init(){
 				'account'   => $token,
 				'expiry'    => preg_replace('/[^\d]/i','', wc_clean($_POST['card_connect-card-expiry'])),
 				'cvv2'      => wc_clean($_POST['card_connect-card-cvc']),
-				'amount'    => $woocommerce->cart->total * 100,
+				'amount'    => $order->order_total * 100,
 				'currency'  => "USD",
 				'orderid'   => sprintf(__('%s - Order #%s', 'woocommerce'), esc_html(get_bloginfo('name', 'display')), $order->get_order_number()),
 				'name'      => trim( $order->billing_first_name . ' ' . $order->billing_last_name ),
