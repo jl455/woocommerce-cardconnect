@@ -378,6 +378,7 @@ function CardConnectPaymentGateway_init(){
 				}
 
 				$order->payment_complete($response['retref']);
+				update_post_meta($order_id, '_transaction_id', $response['retref']);
 
 				// Reduce stock levels
 				$order->reduce_order_stock();
