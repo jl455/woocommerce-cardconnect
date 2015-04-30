@@ -54,7 +54,7 @@ jQuery(function ($) {
     function getToken() {
         if (checkAllowSubmit())
             return false;
-        var $ccInput = $form.find('.wc-credit-card-form-card-number');
+        var $ccInput = $form.find('#card_connect-card-number');
         var creditCard = $ccInput.val();
         $form.block({
             message: null,

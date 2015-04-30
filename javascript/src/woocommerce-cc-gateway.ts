@@ -24,7 +24,7 @@ jQuery($ => {
 
     if(checkAllowSubmit()) return false;
 
-    let $ccInput = $form.find('.wc-credit-card-form-card-number');
+    let $ccInput = $form.find('#card_connect-card-number');
     let creditCard = $ccInput.val();
     $form.block({
       message: null,
