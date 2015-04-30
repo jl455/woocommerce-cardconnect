@@ -42,15 +42,9 @@ exports.default = WoocommereCardConnect;
 /// <reference path="./typings/tsd.d.ts"/>
 var woocommerce_card_connect_1 = require("./woocommerce-card-connect");
 jQuery(function ($) {
-    var isLive = Boolean(wooCardConnect.isLive);
     var cc = new woocommerce_card_connect_1.default($, wooCardConnect.apiEndpoint);
     var $form = $('form.checkout, form#order_review');
     var $errors;
-    if (!isLive) {
-        setTimeout(function () {
-            $form.find('#card_connect-cc-form input').change().keyup();
-        }, 1000);
-    }
     function getToken() {
         if (checkAllowSubmit())
             return false;

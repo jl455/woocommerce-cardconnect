@@ -6,19 +6,9 @@ import WoocommereCardConnect from "./woocommerce-card-connect";
 
 jQuery($ => {
 
-  let isLive : boolean = Boolean(wooCardConnect.isLive);
   let cc = new WoocommereCardConnect($, wooCardConnect.apiEndpoint);
   let $form = $('form.checkout, form#order_review');
   let $errors;
-
-  // Simulate some text entry to get jQuery Payment to reformat numbers
-  if(!isLive){
-    // Arbitrary set timout to delay for ajax events
-    // no biggie if this fails, it's just for looks in sandbox mode..
-    setTimeout(() => {
-      $form.find('#card_connect-cc-form input').change().keyup();
-    }, 1000);
-  }
 
   function getToken() : boolean {
 
