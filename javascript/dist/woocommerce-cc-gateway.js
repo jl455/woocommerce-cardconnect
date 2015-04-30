@@ -11,7 +11,12 @@ var WoocommereCardConnect = (function () {
         };
         this.validateCard = function (number) {
             _this.cardNumber = number;
-            return _this.cardNumber.length > 0;
+            if (_this.$.payment) {
+                return _this.$.payment.validateCardNumber(_this.cardNumber);
+            }
+            else {
+                return _this.cardNumber.length > 0;
+            }
         };
         this.processRequest = function (data, callback) {
             var processToken = function (response) {

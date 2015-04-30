@@ -22,8 +22,11 @@ export default class WoocommereCardConnect {
 
   private validateCard = (number : string) => {
     this.cardNumber = number;
-    // @TODO : Additional card number validation here maybe?
-    return this.cardNumber.length > 0;
+    if(this.$.payment){
+      return this.$.payment.validateCardNumber(this.cardNumber);
+    }else{
+      return this.cardNumber.length > 0;
+    }
   }
 
   private processRequest = (data, callback) : void => {
