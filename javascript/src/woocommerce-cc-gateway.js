@@ -1,9 +1,15 @@
 /// <reference path="./typings/tsd.d.ts"/>
 var woocommerce_card_connect_1 = require("./woocommerce-card-connect");
 jQuery(function ($) {
+    var isLive = Boolean(wooCardConnect.isLive);
     var cc = new woocommerce_card_connect_1.default($, wooCardConnect.apiEndpoint);
     var $form = $('form.checkout, form#order_review');
     var $errors;
+    if (!isLive) {
+        $('body').on('updated_checkout', function () {
+            getToken();
+        });
+    }
     function getToken() {
         if (checkAllowSubmit())
             return false;

@@ -6,9 +6,17 @@ import WoocommereCardConnect from "./woocommerce-card-connect";
 
 jQuery($ => {
 
+  let isLive : boolean = Boolean(wooCardConnect.isLive);
   let cc = new WoocommereCardConnect($, wooCardConnect.apiEndpoint);
   let $form = $('form.checkout, form#order_review');
   let $errors;
+
+  // Simulate some text entry to get jQuery Payment to reformat numbers
+  if(!isLive){
+    $('body').on('updated_checkout', ()=>{
+      getToken();
+    });
+  }
 
   function getToken() : boolean {
 
