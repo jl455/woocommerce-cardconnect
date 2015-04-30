@@ -21,6 +21,13 @@ Please notice that WooCommerce (2.1+) must be installed and active.
 
 == Changelog ==
 
+= 0.4.0 =
+* Implement immediate tokenization of credit card number, with improved error feedback
+* Allow unique CardConnect site names to be specified in gateway configuration
+* Allow customer to supply discrete cardholder name if necessary
+* UI Tweaks
+* Bug fixes
+
 = 0.1.0 =
 * Beta release. Initial functionality includes tokenized transactions, easy toggle between prod/test environments,
 and auth only/capture transactions.
