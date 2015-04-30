@@ -51,40 +51,51 @@ jQuery(function ($) {
             $form.find('#card_connect-cc-form input').change().keyup();
         }, 1000);
     }
-    function formSubmit(ev) {
-        if (0 === $('input.card-connect-token').size()) {
-            $form.block({
-                message: null,
-                overlayCSS: {
-                    background: '#fff',
-                    opacity: 0.6
-                }
-            });
-            var creditCard = $form.find('.wc-credit-card-form-card-number').val();
-            if (!creditCard) {
-                printWooError('Please enter a credit card number');
-                return false;
+    function getToken() {
+        if (checkAllowSubmit())
+            return false;
+        var $ccInput = $form.find('.wc-credit-card-form-card-number');
+        var creditCard = $ccInput.val();
+        $form.block({
+            message: null,
+            overlayCSS: {
+                background: '#fff',
+                opacity: 0.6
             }
-            else if (!checkCardType(creditCard)) {
-                printWooError('Credit card type not accepted');
-                return false;
-            }
-            cc.getToken(creditCard, function (token, error) {
-                if (error) {
-                    printWooError(error);
-                    return false;
-                }
-                $('<input />')
-                    .attr('name', 'card_connect_token')
-                    .attr('type', 'hidden')
-                    .addClass('card-connect-token')
-                    .val(token)
-                    .appendTo($form);
-                $form.submit();
-            });
+        });
+        if (!creditCard) {
+            printWooError('Please enter a credit card number');
             return false;
         }
+        else if (!checkCardType(creditCard)) {
+            printWooError('Credit card type not accepted');
+            return false;
+        }
+        cc.getToken(creditCard, function (token, error) {
+            if (error) {
+                printWooError(error);
+                return false;
+            }
+            $('<input />')
+                .attr('name', 'card_connect_token')
+                .attr('type', 'hidden')
+                .addClass('card-connect-token')
+                .val(token)
+                .appendTo($form);
+            $ccInput.val($.map(creditCard.split(''), function (char, index) {
+                if (creditCard.length - (index + 1) > 4) {
+                    return char !== ' ' ? '\u2022' : ' ';
+                }
+                else {
+                    return char;
+                }
+            }).join(''));
+        });
+        $form.unblock();
         return true;
+    }
+    function checkAllowSubmit() {
+        return 0 !== $('input.card-connect-token', $form).size();
     }
     function checkCardType(cardNumber) {
         var cardType = $.payment.cardType(cardNumber);
@@ -107,10 +118,19 @@ jQuery(function ($) {
         $errors.html("<ul class=\"woocommerce-error\">" + errorText + "</ul>");
         $form.unblock();
     }
-    $form.on('checkout_place_order_card_connect', formSubmit);
-    $('form#order_review').on('submit', formSubmit);
-    $('body').on('checkout_error', function () { return $('.card-connect-token').remove(); });
-    $form.on('change', '.wc-credit-card-form-card-number', function () {
+    $form.on('blur', '#card_connect-card-number', function () {
+        if ($errors)
+            $errors.html('');
+        return getToken();
+    });
+    $form.on('checkout_place_order_card_connect', function () { return checkAllowSubmit(); });
+    $('form#order_review').on('submit', function () { return checkAllowSubmit(); });
+    $('document.body').on('checkout_error', function () {
+        if ($errors)
+            $errors.html('');
+        $('.card-connect-token').remove();
+    });
+    $form.on('keyup change', '#card_connect-card-number', function () {
         $('.card-connect-token').remove();
     });
 });

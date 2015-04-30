@@ -20,39 +20,55 @@ jQuery($ => {
     }, 1000);
   }
 
-  function formSubmit(ev) : boolean {
-    if(0 === $('input.card-connect-token').size()){
-      $form.block({
-        message: null,
-        overlayCSS: {
-          background: '#fff',
-          opacity: 0.6
-        }
-      });
-      let creditCard = $form.find('.wc-credit-card-form-card-number').val();
-      if(!creditCard){
-        printWooError('Please enter a credit card number');
-        return false;
-      }else if(!checkCardType(creditCard)){
-        printWooError('Credit card type not accepted');
-        return false;
+  function getToken() : boolean {
+
+    if(checkAllowSubmit()) return false;
+
+    let $ccInput = $form.find('.wc-credit-card-form-card-number');
+    let creditCard = $ccInput.val();
+    $form.block({
+      message: null,
+      overlayCSS: {
+        background: '#fff',
+        opacity: 0.6
       }
-      cc.getToken(creditCard, function(token, error){
-        if(error){
-          printWooError(error);
-          return false;
-        }
-        $('<input />')
-          .attr('name', 'card_connect_token')
-          .attr('type', 'hidden')
-          .addClass('card-connect-token')
-          .val(token)
-          .appendTo($form);
-        $form.submit();
-      });
+    });
+    if(!creditCard){
+      printWooError('Please enter a credit card number');
+      return false;
+    }else if(!checkCardType(creditCard)){
+      printWooError('Credit card type not accepted');
       return false;
     }
+    cc.getToken(creditCard, function(token, error){
+      if(error){
+        printWooError(error);
+        return false;
+      }
+      // Append token as hidden input
+      $('<input />')
+        .attr('name', 'card_connect_token')
+        .attr('type', 'hidden')
+        .addClass('card-connect-token')
+        .val(token)
+        .appendTo($form);
+
+      // Mask user entered CC number
+      $ccInput.val($.map(creditCard.split(''), (char, index) => {
+        if(creditCard.length - (index + 1) > 4 ){
+          return char !== ' ' ? '\u2022' : ' ';
+        }else{
+          return char;
+        }
+      }).join(''));
+
+    });
+    $form.unblock();
     return true;
+  }
+
+  function checkAllowSubmit() : boolean {
+    return 0 !== $('input.card-connect-token', $form).size();
   }
 
   function checkCardType(cardNumber : string) : boolean {
@@ -78,15 +94,24 @@ jQuery($ => {
     $form.unblock();
   }
 
+  // Get token when focus of CC field is lost
+  $form.on('blur', '#card_connect-card-number', () => {
+    if($errors) $errors.html('');
+    return getToken();
+  });
+
   // Bind Submit Listeners
-  $form.on('checkout_place_order_card_connect', formSubmit);
-  $('form#order_review').on('submit', formSubmit);
+  $form.on('checkout_place_order_card_connect', () => checkAllowSubmit());
+  $('form#order_review').on('submit', () => checkAllowSubmit());
 
   // Remove token on checkout err
-  $('body').on('checkout_error', () => $('.card-connect-token').remove());
+  $('document.body').on('checkout_error', () => {
+    if($errors) $errors.html('');
+    $('.card-connect-token').remove();
+  });
 
   // Clear token if form is changed
-  $form.on('change', '.wc-credit-card-form-card-number', () => {
+  $form.on('keyup change', '#card_connect-card-number', () => {
     $('.card-connect-token').remove();
   });
 
