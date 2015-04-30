@@ -478,6 +478,7 @@ function CardConnectPaymentGateway_init(){
 				'card-connect-card-cvc-field' => '<p class="form-row form-row-last">
 					<label for="' . esc_attr( $this->id ) . '-card-cvc">' . __( 'Card Code', 'woocommerce' ) . ' <span class="required">*</span></label>
 					<input id="' . esc_attr( $this->id ) . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" type="text" autocomplete="off" placeholder="' . __( 'CVC', 'woocommerce' ) . '" name="' . $this->id . '-card-cvc" ' . ($isSandbox ? 'value="123"' : '') . '/>
+					<em>' . __( 'Your CVV number will not be stored on sever.', 'woocommerce' ) . '</em>
 				</p>'
 			);
 
