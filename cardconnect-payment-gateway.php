@@ -16,6 +16,8 @@ if(!defined('ABSPATH')){
 	exit; // Exit if accessed directly
 }
 
+define('WC_CARDCONNECT_VER', '0.1.0');
+
 add_action('plugins_loaded', 'CardConnectPaymentGateway_init', 0);
 function CardConnectPaymentGateway_init(){
 
@@ -533,11 +535,12 @@ function CardConnectPaymentGateway_init(){
 			wp_register_script(
 				'woocommerce-cardconnect',
 				plugins_url('javascript/dist/woocommerce-cc-gateway.js', __FILE__),
-				array('jquery'), '1.0', true
+				array('jquery'), WC_CARDCONNECT_VER, true
 			);
 			wp_register_style(
 				'woocommerce-cardconnect-paymentform',
-				plugins_url('stylesheets/woocommerce-cc-gateway.css', __FILE__)
+				plugins_url('stylesheets/woocommerce-cc-gateway.css', __FILE__),
+				null, WC_CARDCONNECT_VER
 			);
 		}
 
