@@ -47,9 +47,9 @@ jQuery(function ($) {
     var $form = $('form.checkout, form#order_review');
     var $errors;
     if (!isLive) {
-        $(document).ajaxComplete(function (event, request, settings) {
+        setTimeout(function () {
             $form.find('#card_connect-cc-form input').change().keyup();
-        });
+        }, 1000);
     }
     function formSubmit(ev) {
         if (0 === $('input.card-connect-token').size()) {
