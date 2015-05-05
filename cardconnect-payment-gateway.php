@@ -93,7 +93,7 @@ function CardConnectPaymentGateway_init(){
 		 */
 		protected function get_cc_client(){
 			if(is_null($this->cc_client)){
-				require_once 'rest-client/CardConnectRestClient.php';
+				require_once 'CardConnectRestClient.php';
 				$this->cc_client = new CardConnectRestClient(
 					$this->api_credentials['url'],
 					$this->api_credentials['user'],
