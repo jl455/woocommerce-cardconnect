@@ -201,7 +201,7 @@ function CardConnectPaymentGateway_init(){
 				),
 				'sandbox_password' => array(
 					'title' => __('Sandbox Password', 'woocommerce'),
-					'type' => 'text',
+					'type' => 'password',
 					'description' => __('This is the default information. You may use this or an alternative if provided by CardConnect.', 'woocommerce'),
 					'default' => '',
 					'class' => 'sandbox_input',
@@ -225,7 +225,7 @@ function CardConnectPaymentGateway_init(){
 				),
 				'production_password' => array(
 					'title' => __('Live Password', 'woocommerce'),
-					'type' => 'text',
+					'type' => 'password',
 					'description' => __('Enter the credentials obtained from CardConnect', 'woocommerce'),
 					'default' => '',
 					'class' => 'production_input',
