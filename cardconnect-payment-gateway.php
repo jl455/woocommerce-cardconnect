@@ -68,14 +68,15 @@ function CardConnectPaymentGateway_init(){
 			);
 			$this->view_transaction_url = '#';
 
+			// Load user options
+			$this->load_options();
+
 			// Load the form fields
 			$this->init_form_fields();
 
 			// Load the settings.
 			$this->init_settings();
 
-			// Load user options
-			$this->load_options();
 
 			// Actions
 			add_action('wp_enqueue_scripts', array( $this, 'register_scripts'));
