@@ -46,6 +46,7 @@ function CardConnectPaymentGateway_init(){
 		private $card_types = array();
 		private $verification;
 		private $registration_enabled;
+		private $profiles_enabled;
 
 		/**
 		 * Constructor for the gateway.
@@ -115,6 +116,7 @@ function CardConnectPaymentGateway_init(){
 			$this->enabled = $this->get_option('enabled');
 
 			$this->registration_enabled = WC_Admin_Settings::get_option('woocommerce_enable_signup_and_login_from_checkout') === 'yes' ? true : false;
+			$this->profiles_enabled = $this->registration_enabled && $this->get_option('enable_profiles');
 
 			$this->title = $this->get_option('title');
 			$this->description = $this->get_option('description');
