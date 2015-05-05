@@ -45,6 +45,7 @@ function CardConnectPaymentGateway_init(){
 		private $site;
 		private $card_types = array();
 		private $verification;
+		private $registration_enabled;
 
 		/**
 		 * Constructor for the gateway.
@@ -113,6 +114,8 @@ function CardConnectPaymentGateway_init(){
 
 			$this->enabled = $this->get_option('enabled');
 
+			$this->registration_enabled = WC_Admin_Settings::get_option('woocommerce_enable_signup_and_login_from_checkout') === 'yes' ? true : false;
+
 			$this->title = $this->get_option('title');
 			$this->description = $this->get_option('description');
 			$this->card_types = $this->get_option('card_types');
@@ -143,6 +146,11 @@ function CardConnectPaymentGateway_init(){
 		 * @return void
 		 */
 		public function init_form_fields(){
+
+			$profile_tooltip = array();
+			$profile_tooltip['reg_enabled'] = __('Store payment information on CardConnect\'s servers as a convenience to customers.', 'woocommerce');
+			$profile_tooltip['reg_disabled'] = __('You must enable registration on checkout in order to offer this feature.', 'woocommerce');
+
 			$this->form_fields = array(
 				'enabled' => array(
 					'title' => __('Enable/Disable', 'woocommerce'),
@@ -250,6 +258,15 @@ function CardConnectPaymentGateway_init(){
 						'discover' => __('Discover', 'woocommerce'),
 						'amex' => __('American Express', 'woocommerce')
 					),
+				),
+				'enable_profiles' => array(
+					'title' => __('Saved Cards', 'woocommerce'),
+					'label' => __('Allow customers to save payment information', 'woocommerce'),
+					'type' => 'checkbox',
+					'description' => $this->registration_enabled ? $profile_tooltip['reg_enabled'] : $profile_tooltip['reg_disabled'],
+					'default' => 'no',
+					'desc_tip' => true,
+					'disabled' => !$this->registration_enabled,
 				),
 				'void_avs' => array(
 					'title' => __('Void on AVS failure', 'woocommerce'),
