@@ -39,13 +39,61 @@ var WoocommereCardConnect = (function () {
 exports.default = WoocommereCardConnect;
 
 },{}],2:[function(require,module,exports){
+var SavedCards = (function () {
+    function SavedCards() {
+    }
+    SavedCards.init = function () {
+        var SAVE_CARD_TOGGLE = '#card_connect-save-card';
+        var CARD_NICKNAME = '#card_connect-new-card-alias';
+        var WOOCOMMERCE_CREATE_ACCOUNT = '#createaccount';
+        var CREATE_ACCOUNT_DISABLED_MESSAGE = 'You must check "Create an account" above in order to save your card.';
+        var $ = jQuery;
+        var $cardToggle = $(SAVE_CARD_TOGGLE);
+        var $cardNickname = $(CARD_NICKNAME);
+        var $createAccount = $(WOOCOMMERCE_CREATE_ACCOUNT);
+        if ($createAccount.length === 0)
+            return;
+        $cardToggle.on('change', controlNicknameField);
+        $createAccount.on('change', controlSaveCardToggle);
+        function controlNicknameField() {
+            var isSet = $(this).is(':checked');
+            $cardNickname.prop('disabled', !isSet);
+            if (!isSet)
+                $cardNickname.val('');
+        }
+        function controlSaveCardToggle() {
+            var isSet = $(this).is(':checked');
+            $cardToggle.prop('disabled', !isSet);
+            if (!isSet)
+                $cardToggle.prop('checked', false);
+            setTooltips(isSet);
+        }
+        controlSaveCardToggle();
+        function setTooltips(isEnabled) {
+            var titleText = isEnabled ? '' : CREATE_ACCOUNT_DISABLED_MESSAGE;
+            $cardToggle.attr('title', titleText);
+            $cardNickname.attr('title', titleText);
+        }
+    };
+    SavedCards.submitHandler = function () {
+    };
+    return SavedCards;
+})();
+exports.default = SavedCards;
+
+},{}],3:[function(require,module,exports){
 /// <reference path="./typings/tsd.d.ts"/>
 var card_connect_tokenizer_1 = require("./card-connect-tokenizer");
+var saved_cards_1 = require('./saved-cards');
 jQuery(function ($) {
     var isLive = Boolean(wooCardConnect.isLive);
     var cc = new card_connect_tokenizer_1.default($, wooCardConnect.apiEndpoint);
     var $form = $('form.checkout, form#order_review');
     var $errors;
+    $('body').on('updated_checkout', function () {
+        if (wooCardConnect.profilesEnabled)
+            saved_cards_1.default.init();
+    });
     // Simulate some text entry to get jQuery Payment to reformat numbers
     if (!isLive) {
         $('body').on('updated_checkout', function () {
@@ -142,4 +190,4 @@ jQuery(function ($) {
     });
 });
 
-},{"./card-connect-tokenizer":1}]},{},[2]);
+},{"./card-connect-tokenizer":1,"./saved-cards":2}]},{},[3]);

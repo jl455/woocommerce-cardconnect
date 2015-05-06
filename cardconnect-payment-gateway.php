@@ -471,6 +471,7 @@ function CardConnectPaymentGateway_init(){
 			wp_localize_script('woocommerce-cardconnect', 'wooCardConnect',
 				array(
 					'isLive' => !$isSandbox ? true : false,
+					'profilesEnabled' => $this->profiles_enabled ? true : false,
 					'apiEndpoint' => "https://{$this->site}.{$this->domain}:{$port}{$this->cs_path}",
 					'allowedCards' => $this->card_types
 				)

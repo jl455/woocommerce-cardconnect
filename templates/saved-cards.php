@@ -13,7 +13,8 @@
 			class="input-text"
 			type="text"
 			name="card_connect-new-card-alias"
-		  placeholder="Card Nickname"
+			placeholder="Card Nickname"
+			disabled="true"
 			/>
 	</label>
 </p>

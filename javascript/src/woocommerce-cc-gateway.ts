@@ -3,6 +3,7 @@ declare let jQuery : any;
 declare let wooCardConnect : any;
 declare let window : any;
 import CardConnectTokenizer from "./card-connect-tokenizer";
+import SavedCards from './saved-cards';
 
 jQuery($ => {
 
@@ -10,6 +11,10 @@ jQuery($ => {
   let cc = new CardConnectTokenizer($, wooCardConnect.apiEndpoint);
   let $form = $('form.checkout, form#order_review');
   let $errors;
+
+  $('body').on('updated_checkout', ()=>{
+    if(wooCardConnect.profilesEnabled) SavedCards.init();
+  });
 
   // Simulate some text entry to get jQuery Payment to reformat numbers
   if(!isLive){
