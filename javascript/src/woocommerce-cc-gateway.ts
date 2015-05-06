@@ -2,12 +2,12 @@
 declare let jQuery : any;
 declare let wooCardConnect : any;
 declare let window : any;
-import WoocommereCardConnect from "./woocommerce-card-connect";
+import CardConnectTokenizer from "./card-connect-tokenizer";
 
 jQuery($ => {
 
   let isLive : boolean = Boolean(wooCardConnect.isLive);
-  let cc = new WoocommereCardConnect($, wooCardConnect.apiEndpoint);
+  let cc = new CardConnectTokenizer($, wooCardConnect.apiEndpoint);
   let $form = $('form.checkout, form#order_review');
   let $errors;
 

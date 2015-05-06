@@ -40,10 +40,10 @@ exports.default = WoocommereCardConnect;
 
 },{}],2:[function(require,module,exports){
 /// <reference path="./typings/tsd.d.ts"/>
-var woocommerce_card_connect_1 = require("./woocommerce-card-connect");
+var card_connect_tokenizer_1 = require("./card-connect-tokenizer");
 jQuery(function ($) {
     var isLive = Boolean(wooCardConnect.isLive);
-    var cc = new woocommerce_card_connect_1.default($, wooCardConnect.apiEndpoint);
+    var cc = new card_connect_tokenizer_1.default($, wooCardConnect.apiEndpoint);
     var $form = $('form.checkout, form#order_review');
     var $errors;
     // Simulate some text entry to get jQuery Payment to reformat numbers
@@ -142,4 +142,4 @@ jQuery(function ($) {
     });
 });
 
-},{"./woocommerce-card-connect":1}]},{},[2]);
+},{"./card-connect-tokenizer":1}]},{},[2]);
