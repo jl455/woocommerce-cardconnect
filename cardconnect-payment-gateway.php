@@ -17,6 +17,8 @@ if(!defined('ABSPATH')){
 }
 
 define('WC_CARDCONNECT_VER', '0.4.0');
+define('WC_CARDCONNECT_PLUGIN_PATH', untrailingslashit(plugin_dir_path(__FILE__)));
+define('WC_CARDCONNECT_TEMPLATE_PATH', WC_CARDCONNECT_PLUGIN_PATH . '/templates/');
 
 add_action('plugins_loaded', 'CardConnectPaymentGateway_init', 0);
 function CardConnectPaymentGateway_init(){
@@ -480,7 +482,16 @@ function CardConnectPaymentGateway_init(){
 				return $carry;
 			}, '');
 
-			require 'templates/card-input.php';
+			wc_get_template(
+				'card-input.php',
+				array(
+					'card_icons' => $card_icons,
+					'is_sandbox' => $isSandbox,
+					'profiles_enabled' => $this->profiles_enabled
+				),
+				WC_CARDCONNECT_PLUGIN_PATH,
+				WC_CARDCONNECT_TEMPLATE_PATH
+			);
 		}
 
 		/**
