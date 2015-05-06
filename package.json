@@ -15,6 +15,7 @@
     "gulp-if": "^1.2.5",
     "gulp-ignore": "^1.2.1",
     "gulp-notify": "^2.2.0",
+    "gulp-plumber": "^1.0.0",
     "gulp-uglify": "^1.2.0",
     "mocha": "^2.2.1",
     "tsify": "dpogue/tsify#ts1.5-alpha",

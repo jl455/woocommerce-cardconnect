@@ -1,5 +1,6 @@
 var gulp = require('gulp');
 var notify = require('gulp-notify');
+var plumber = require('gulp-plumber');
 
 /*
  * Browserify/watchify bundler stuff
@@ -14,7 +15,7 @@ var jsConfig = {
   publicPath : __dirname + '/javascript/dist',
   source: {
     path: __dirname + '/javascript/src',
-    main: 'woocommerce-cc-gateway.js',
+    main: 'woocommerce-cc-gateway.ts',
     result: 'woocommerce-cc-gateway.js'
   }
 };
@@ -27,12 +28,22 @@ gulp.task('compile-js', function (){
       packageCache: {}
     })
     .add(jsConfig.source.path + '/' + jsConfig.source.main)
-    // .plugin(tsify);
+    .plugin(tsify);
 
   bundler = watchify(bundler);
 
   var bundle = function(bundler){
     bundler.bundle()
+      .on('error', notify.onError({
+        message: 'Error: <%= error.toString() %>',
+        title: 'Compile Error',
+        sound: true,
+        icon: ''
+      }))
+      .on('error', function(error){
+        this.emit('end');
+      })
+      .pipe(plumber({errorHandler: notify.onError("Error: <%= error.message %>")}))
       .pipe(source(jsConfig.source.result))
       .pipe(gulp.dest(jsConfig.publicPath))
       .pipe(notify('Bundle re-bundled.'));
