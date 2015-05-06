@@ -20,6 +20,8 @@ var jsConfig = {
   }
 };
 
+gulp.task('default', ['compile-js']);
+
 gulp.task('compile-js', function (){
   var bundler = browserify(
     {
