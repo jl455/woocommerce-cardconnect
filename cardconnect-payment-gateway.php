@@ -356,7 +356,8 @@ function CardConnectPaymentGateway_init(){
 			global $woocommerce;
 			$order = new WC_Order($order_id);
 			$user_id = get_current_user_id();
-			$profile_id = $this->saved_cards->get_user_profile_id($user_id);
+
+			$profile_id = $this->profiles_enabled ? $this->saved_cards->get_user_profile_id($user_id) : false;
 
 			$token = isset( $_POST['card_connect_token'] ) ? wc_clean( $_POST['card_connect_token'] ) : false;
 			$card_name = isset( $_POST['card_connect-card-name'] ) ? wc_clean( $_POST['card_connect-card-name'] ) : false;
@@ -534,14 +535,19 @@ function CardConnectPaymentGateway_init(){
 				return $carry;
 			}, '');
 
+			$template_params = array(
+				'card_icons' => $card_icons,
+				'is_sandbox' => $isSandbox,
+				'profiles_enabled' => $this->profiles_enabled
+			);
+
+			if($this->profiles_enabled){
+				$template_params['saved_cards'] = $this->saved_cards->get_user_cards(get_current_user_id());
+			}
+
 			wc_get_template(
 				'card-input.php',
-				array(
-					'card_icons' => $card_icons,
-					'is_sandbox' => $isSandbox,
-					'profiles_enabled' => $this->profiles_enabled,
-					'saved_cards' => $this->saved_cards->get_user_cards(get_current_user_id())
-				),
+				$template_params,
 				WC_CARDCONNECT_PLUGIN_PATH,
 				WC_CARDCONNECT_TEMPLATE_PATH
 			);
