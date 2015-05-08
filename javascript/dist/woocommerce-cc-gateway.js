@@ -59,6 +59,7 @@ var SavedCards = (function () {
         var $savedCard = $(SAVED_CARD);
         var $paymentFields = $([
             SAVE_CARD_TOGGLE,
+            CARD_NICKNAME,
             CARDHOLDER_NAME,
             CARD_NUMBER,
             EXPIRY

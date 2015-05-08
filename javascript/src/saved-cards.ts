@@ -21,7 +21,8 @@ export default class SavedCards {
 		let $createAccount = $(WOOCOMMERCE_CREATE_ACCOUNT);
 		let $savedCard = $(SAVED_CARD);
 		let $paymentFields = $([
-			SAVE_CARD_TOGGLE, // While not technically a payment field, it should be disabled with the rest
+			SAVE_CARD_TOGGLE, // While not technically payment fields,
+			CARD_NICKNAME,    // these should be disabled with the rest
 			CARDHOLDER_NAME,
 			CARD_NUMBER,
 			EXPIRY
