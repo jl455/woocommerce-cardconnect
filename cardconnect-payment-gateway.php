@@ -71,7 +71,6 @@ function CardConnectPaymentGateway_init(){
 				// 'subscription_payment_method_change',
 				// 'subscription_date_changes'
 			);
-			$this->view_transaction_url = '#';
 
 			// Load user options
 			$this->load_options();
@@ -81,7 +80,6 @@ function CardConnectPaymentGateway_init(){
 
 			// Load the settings.
 			$this->init_settings();
-
 
 			// Actions
 			add_action('wp_enqueue_scripts', array( $this, 'register_scripts'));
