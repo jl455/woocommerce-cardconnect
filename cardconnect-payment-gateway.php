@@ -17,8 +17,8 @@ if(!defined('ABSPATH')){
 }
 
 define('WC_CARDCONNECT_VER', '0.4.0');
-define('WC_CARDCONNECT_PLUGIN_PATH', untrailingslashit(plugin_dir_path(__FILE__)));
-define('WC_CARDCONNECT_TEMPLATE_PATH', WC_CARDCONNECT_PLUGIN_PATH . '/templates/');
+define('WC_CARDCONNECT_PLUGIN_PATH', untrailingslashit(plugin_basename(__DIR__)));
+define('WC_CARDCONNECT_TEMPLATE_PATH', untrailingslashit(plugin_dir_path(__FILE__)) . '/templates/');
 
 add_action('plugins_loaded', 'CardConnectPaymentGateway_init', 0);
 function CardConnectPaymentGateway_init(){
