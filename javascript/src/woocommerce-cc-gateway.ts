@@ -31,6 +31,9 @@ jQuery($ => {
 
     let $ccInput = $form.find('#card_connect-card-number');
     let creditCard = $ccInput.val();
+
+    if(creditCard.indexOf('\u2022') > -1) return;
+
     $form.block({
       message: null,
       overlayCSS: {
