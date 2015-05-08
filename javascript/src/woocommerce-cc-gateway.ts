@@ -5,6 +5,8 @@ declare let window : any;
 import CardConnectTokenizer from "./card-connect-tokenizer";
 import SavedCards from './saved-cards';
 
+const SAVED_CARDS_SELECT = '#card_connect-cards';
+
 jQuery($ => {
 
   let isLive : boolean = Boolean(wooCardConnect.isLive);
@@ -71,7 +73,7 @@ jQuery($ => {
   }
 
   function checkAllowSubmit() : boolean {
-    return 0 !== $('input.card-connect-token', $form).size();
+    return 0 !== $('input.card-connect-token', $form).size() || $(SAVED_CARDS_SELECT).val();
   }
 
   function checkCardType(cardNumber : string) : boolean {
@@ -114,7 +116,7 @@ jQuery($ => {
   });
 
   // Clear token if form is changed
-  $form.on('keyup change', '#card_connect-card-number', () => {
+  $form.on('keyup change', `#card_connect-card-number, ${SAVED_CARDS_SELECT}`, () => {
     $('.card-connect-token').remove();
   });
 

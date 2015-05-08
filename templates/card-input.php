@@ -7,7 +7,7 @@
 		wc_get_template(
 			'saved-cards.php',
 			array(
-
+				'saved_cards' => $saved_cards
 			),
 			WC_CARDCONNECT_PLUGIN_PATH,
 			WC_CARDCONNECT_TEMPLATE_PATH

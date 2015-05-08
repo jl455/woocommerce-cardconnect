@@ -49,6 +49,7 @@ function CardConnectPaymentGateway_init(){
 		private $verification;
 		private $registration_enabled;
 		private $profiles_enabled;
+		private $saved_cards;
 
 		/**
 		 * Constructor for the gateway.
@@ -89,6 +90,12 @@ function CardConnectPaymentGateway_init(){
 
 			// Append local includes dir to include path
 			set_include_path(get_include_path() . PATH_SEPARATOR . plugin_dir_path(__FILE__) . 'includes');
+
+			if($this->profiles_enabled){
+				require_once 'CardConnectSavedCards.php';
+				$this->saved_cards = new CardConnectSavedCards($this->get_cc_client(), $this->api_credentials['mid']);
+			}
+
 		}
 
 		/**
@@ -118,7 +125,7 @@ function CardConnectPaymentGateway_init(){
 			$this->enabled = $this->get_option('enabled');
 
 			$this->registration_enabled = WC_Admin_Settings::get_option('woocommerce_enable_signup_and_login_from_checkout') === 'yes' ? true : false;
-			$this->profiles_enabled = $this->registration_enabled && $this->get_option('enable_profiles');
+			$this->profiles_enabled = $this->registration_enabled && $this->get_option('enable_profiles') === 'yes';
 
 			$this->title = $this->get_option('title');
 			$this->description = $this->get_option('description');
@@ -350,20 +357,22 @@ function CardConnectPaymentGateway_init(){
 		public function process_payment($order_id){
 			global $woocommerce;
 			$order = new WC_Order($order_id);
+			$user_id = get_current_user_id();
+			$profile_id = $this->saved_cards->get_user_profile_id($user_id);
 
 			$token = isset( $_POST['card_connect_token'] ) ? wc_clean( $_POST['card_connect_token'] ) : false;
+			$card_name = isset( $_POST['card_connect-card-name'] ) ? wc_clean( $_POST['card_connect-card-name'] ) : false;
+			$store_new_card = isset($_POST['card_connect-save-card']) ? wc_clean($_POST['card_connect-save-card']) : false;
+			$saved_card_id = isset( $_POST['card_connect-cards'] ) ? wc_clean( $_POST['card_connect-cards'] ) : false;
+			$card_alias = isset($_POST['card_connect-new-card-alias']) ? wc_clean($_POST['card_connect-new-card-alias']) : false;
 
-			if(!$token){
+			if(!$token && !$saved_card_id){
 				wc_add_notice(__('Payment error: ', 'woothemes') . 'Please make sure your card details have been entered correctly and that your browser supports JavaScript.', 'error');
 				return;
 			}
 
-			$card_name = isset( $_POST['card_connect-card-name'] ) ? wc_clean( $_POST['card_connect-card-name'] ) : false;
-
 			$request = array(
 				'merchid'   => $this->api_credentials['mid'],
-				'account'   => $token,
-				'expiry'    => preg_replace('/[^\d]/i','', wc_clean($_POST['card_connect-card-expiry'])),
 				'cvv2'      => wc_clean($_POST['card_connect-card-cvc']),
 				'amount'    => $order->order_total * 100,
 				'currency'  => "USD",
@@ -376,6 +385,43 @@ function CardConnectPaymentGateway_init(){
 				'postal'    => $order->billing_postcode,
 				'capture'   => $this->mode === 'capture' ? 'Y' : 'N',
 			);
+
+			if($saved_card_id){
+
+				// Payment is using a stored card, no token or account number to pass
+				$request['profile'] = "$profile_id/$saved_card_id";
+
+			}else{
+
+				// Either a basic purchase or adding a new card. Either way, include the expiration date
+				$request['expiry'] = preg_replace('/[^\d]/i','', wc_clean($_POST['card_connect-card-expiry']));
+
+				// Adding an additional card to an existing profile -- This requires a separate API call, handled in `add_account_to_profile`
+				if($store_new_card && $profile_id){
+
+					$request['profile'] = $profile_id;
+
+					// The `token` key isn't used by the Auth/Capture service however it's ignored if it's passed as `account` when updating profiles
+					$request['token'] = $token;
+
+					// Get the new card's account id, remove the token key
+					$new_account_id = $this->saved_cards->add_account_to_profile($user_id, $card_alias, $request);
+					unset($request['token']);
+
+					// Overwrite the profile field with the `profile/acctid` format required by the Auth/Capture service
+					$request['profile'] = "$profile_id/$new_account_id";
+
+					// Adding a new card, no existing profile
+				}else if($store_new_card && !$profile_id){
+					$request['profile'] = 'Y';
+					$request['account'] = $token;
+
+					// No request to save card, just pass the token
+				}else{
+					$request['account'] = $token;
+				}
+
+			}
 
 			$response = $this->get_cc_client()->authorizeTransaction($request);
 
@@ -412,6 +458,12 @@ function CardConnectPaymentGateway_init(){
 				$woocommerce->cart->empty_cart();
 
 				$order->add_order_note(sprintf(__( 'CardConnect payment approved (ID: %s, Authcode: %s)', 'woocommerce'), $response['retref'], $response['authcode']));
+
+				// First time this customer has saved a card, pull the response fields and store in user meta
+				if($store_new_card && !$profile_id){
+					$this->saved_cards->set_user_profile_id($user_id, $response['profileid']);
+					$this->saved_cards->save_user_card($user_id, array($response['acctid'] => $card_alias));
+				}
 
 				// Return thankyou redirect
 				return array(
@@ -473,7 +525,8 @@ function CardConnectPaymentGateway_init(){
 					'isLive' => !$isSandbox ? true : false,
 					'profilesEnabled' => $this->profiles_enabled ? true : false,
 					'apiEndpoint' => "https://{$this->site}.{$this->domain}:{$port}{$this->cs_path}",
-					'allowedCards' => $this->card_types
+					'allowedCards' => $this->card_types,
+					'userSignedIn' => is_user_logged_in()
 				)
 			);
 
@@ -488,7 +541,8 @@ function CardConnectPaymentGateway_init(){
 				array(
 					'card_icons' => $card_icons,
 					'is_sandbox' => $isSandbox,
-					'profiles_enabled' => $this->profiles_enabled
+					'profiles_enabled' => $this->profiles_enabled,
+					'saved_cards' => $this->saved_cards->get_user_cards(get_current_user_id())
 				),
 				WC_CARDCONNECT_PLUGIN_PATH,
 				WC_CARDCONNECT_TEMPLATE_PATH
@@ -506,7 +560,7 @@ function CardConnectPaymentGateway_init(){
 		 * @uses   Simplify_BadRequestException
 		 * @return bool|WP_Error
 		 */
-		public function process_refund( $order_id, $amount = null, $reason = '' ) {
+		public function process_refund($order_id, $amount = null, $reason = '') {
 
 			$order = new WC_Order($order_id);
 			$retref = get_post_meta($order_id, '_transaction_id', true);

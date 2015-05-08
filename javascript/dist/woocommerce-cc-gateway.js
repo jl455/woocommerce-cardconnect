@@ -46,15 +46,29 @@ var SavedCards = (function () {
         var SAVE_CARD_TOGGLE = '#card_connect-save-card';
         var CARD_NICKNAME = '#card_connect-new-card-alias';
         var WOOCOMMERCE_CREATE_ACCOUNT = '#createaccount';
+        var SAVED_CARD = '#card_connect-cards';
+        var CARDHOLDER_NAME = '#card_connect-card-name';
+        var CARD_NUMBER = '#card_connect-card-number';
+        var EXPIRY = '#card_connect-card-expiry';
+        var CVV = '#card_connect-card-cvc';
         var CREATE_ACCOUNT_DISABLED_MESSAGE = 'You must check "Create an account" above in order to save your card.';
         var $ = jQuery;
         var $cardToggle = $(SAVE_CARD_TOGGLE);
         var $cardNickname = $(CARD_NICKNAME);
         var $createAccount = $(WOOCOMMERCE_CREATE_ACCOUNT);
-        if ($createAccount.length === 0)
+        var $savedCard = $(SAVED_CARD);
+        var $paymentFields = $([
+            SAVE_CARD_TOGGLE,
+            CARDHOLDER_NAME,
+            CARD_NUMBER,
+            EXPIRY
+        ].join(','));
+        var userSignedIn = wooCardConnect.userSignedIn;
+        if ($createAccount.length === 0 && !userSignedIn)
             return;
         $cardToggle.on('change', controlNicknameField);
         $createAccount.on('change', controlSaveCardToggle);
+        $savedCard.on('change', controlCardInputFields);
         function controlNicknameField() {
             var isSet = $(this).is(':checked');
             $cardNickname.prop('disabled', !isSet);
@@ -62,6 +76,8 @@ var SavedCards = (function () {
                 $cardNickname.val('');
         }
         function controlSaveCardToggle() {
+            if (userSignedIn)
+                return;
             var isSet = $(this).is(':checked');
             $cardToggle.prop('disabled', !isSet);
             if (!isSet)
@@ -69,6 +85,13 @@ var SavedCards = (function () {
             setTooltips(isSet);
         }
         controlSaveCardToggle();
+        function controlCardInputFields() {
+            var value = $(this).find(':selected').val();
+            $paymentFields.prop('disabled', !!value);
+            if (value) {
+                $paymentFields.val('');
+            }
+        }
         function setTooltips(isEnabled) {
             var titleText = isEnabled ? '' : CREATE_ACCOUNT_DISABLED_MESSAGE;
             $cardToggle.attr('title', titleText);
@@ -85,6 +108,7 @@ exports.default = SavedCards;
 /// <reference path="./typings/tsd.d.ts"/>
 var card_connect_tokenizer_1 = require("./card-connect-tokenizer");
 var saved_cards_1 = require('./saved-cards');
+var SAVED_CARDS_SELECT = '#card_connect-cards';
 jQuery(function ($) {
     var isLive = Boolean(wooCardConnect.isLive);
     var cc = new card_connect_tokenizer_1.default($, wooCardConnect.apiEndpoint);
@@ -146,7 +170,7 @@ jQuery(function ($) {
         return true;
     }
     function checkAllowSubmit() {
-        return 0 !== $('input.card-connect-token', $form).size();
+        return 0 !== $('input.card-connect-token', $form).size() || $(SAVED_CARDS_SELECT).val();
     }
     function checkCardType(cardNumber) {
         var cardType = $.payment.cardType(cardNumber);
@@ -185,7 +209,7 @@ jQuery(function ($) {
         $('.card-connect-token').remove();
     });
     // Clear token if form is changed
-    $form.on('keyup change', '#card_connect-card-number', function () {
+    $form.on('keyup change', "#card_connect-card-number, " + SAVED_CARDS_SELECT, function () {
         $('.card-connect-token').remove();
     });
 });

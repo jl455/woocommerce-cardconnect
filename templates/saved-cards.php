@@ -19,18 +19,20 @@
 	</label>
 </p>
 
-<p class="form-row form-row-last">
-	<label for="card_connect-cards">
-		<?php echo __( 'Use a saved card', 'woocommerce' ); ?>
-	</label>
-	<select
-		id="card_connect-cards"
-		class="input-select"
-		name="card_connect-cards"
-		>
-		<option value="1234">7589</option>
-		<option value="1234">7589</option>
-		<option value="1234">7589</option>
-		<option value="1234">7589</option>
-	</select>
-</p>
+<?php if($saved_cards): ?>
+	<p class="form-row form-row-last">
+		<label for="card_connect-cards">
+			<?php echo __( 'Use a saved card', 'woocommerce' ); ?>
+		</label>
+		<select
+			id="card_connect-cards"
+			class="input-select"
+			name="card_connect-cards"
+			>
+			<option selected value="">My Saved Cards</option>
+			<?php foreach($saved_cards as $id => $alias): ?>
+				<option value="<?php echo $id; ?>"><?php echo $alias; ?></option>
+			<?php endforeach; ?>
+		</select>
+	</p>
+<?php endif; ?>
