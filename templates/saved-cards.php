@@ -8,15 +8,15 @@
 			style="margin-right: 3px"
 			/>
 		<?php echo __( 'Save this card', 'woocommerce' ); ?>
-		<input
-			id="card_connect-new-card-alias"
-			class="input-text"
-			type="text"
-			name="card_connect-new-card-alias"
-			placeholder="Card Nickname"
-			disabled="true"
-			/>
 	</label>
+	<input
+		id="card_connect-new-card-alias"
+		class="input-text"
+		type="text"
+		name="card_connect-new-card-alias"
+		placeholder="Card Nickname"
+		disabled="true"
+		/>
 </p>
 
 <?php if($saved_cards): ?>
