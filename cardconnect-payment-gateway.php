@@ -34,13 +34,21 @@ function CardConnectPaymentGateway_init(){
 	// Include Classes
 	include_once 'classes/class-wc-gateway-cardconnect.php';
 	include_once 'classes/class-wc-gateway-cardconnect-saved-cards.php';
+	if(class_exists('WC_Subscriptions_Order')){
+		include_once 'classes/class-wc-gateway-cardconnect-addons.php';
+	}
+
 
 	/**
 	 * Add the Gateway to WooCommerce
 	 **/
 	add_filter('woocommerce_payment_gateways', 'woocommerce_add_gateway_CardConnectPaymentGateway');
 	function woocommerce_add_gateway_CardConnectPaymentGateway($methods){
-		$methods[] = 'CardConnectPaymentGateway';
+		if(class_exists('WC_Subscriptions_Order')){
+			$methods[] = 'CardConnectPaymentGatewayAddons';
+		}else{
+			$methods[] = 'CardConnectPaymentGateway';
+		}
 		return $methods;
 	}
 
