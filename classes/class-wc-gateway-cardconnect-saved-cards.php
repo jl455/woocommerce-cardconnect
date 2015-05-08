@@ -1,5 +1,9 @@
 <?php
 
+if(!defined('ABSPATH')){
+	exit; // Exit if accessed directly
+}
+
 class CardConnectSavedCards {
 
 	const SAVED_CARDS_META_KEY = 'wc_cardconnect_saved_cards';
