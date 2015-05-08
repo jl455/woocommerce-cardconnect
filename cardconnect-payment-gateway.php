@@ -3,7 +3,7 @@
 Plugin Name: CardConnect Payment Gateway
 Plugin URI: http://sofcorp.com/
 Description: Accept credit card payments in your WooCommerce store!
-Version: 0.4.0
+Version: 0.5.0
 Author: SOF Inc <eran@sofcorp.com>
 Author URI: http://sofcorp.com
 
@@ -16,7 +16,7 @@ if(!defined('ABSPATH')){
 	exit; // Exit if accessed directly
 }
 
-define('WC_CARDCONNECT_VER', '0.4.0');
+define('WC_CARDCONNECT_VER', '0.5.0');
 define('WC_CARDCONNECT_PLUGIN_PATH', untrailingslashit(plugin_basename(__DIR__)));
 define('WC_CARDCONNECT_TEMPLATE_PATH', untrailingslashit(plugin_dir_path(__FILE__)) . '/templates/');
 

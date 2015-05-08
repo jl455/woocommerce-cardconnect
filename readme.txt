@@ -21,6 +21,11 @@ Please notice that WooCommerce (2.1+) must be installed and active.
 
 == Changelog ==
 
+= 0.5.0 =
+* New feature: Allow customer to store payment information on CardConnect servers for easy re-use
+* Better tokenization handling
+* Allow for template overrides
+
 = 0.4.0 =
 * Implement immediate tokenization of credit card number, with improved error feedback
 * Allow unique CardConnect site names to be specified in gateway configuration

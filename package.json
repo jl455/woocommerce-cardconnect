@@ -1,6 +1,6 @@
 {
   "name": "woocommerce-cardconnect-payment-gateway",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Accept credit card payments in your WooCommerce store!",
   "main": "index.js",
   "scripts": {
