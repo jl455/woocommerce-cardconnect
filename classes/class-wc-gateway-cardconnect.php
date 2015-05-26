@@ -15,14 +15,14 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 
 	private $env_key;
 	private $cc_client = null;
-	private $api_credentials;
-	private $mode;
+	public $api_credentials;
+	public $mode;
 	private $site;
 	private $card_types = array();
 	private $verification;
 	private $registration_enabled;
-	private $profiles_enabled;
-	private $saved_cards;
+	public $profiles_enabled;
+	public $saved_cards;
 
 	/**
 	 * Constructor for the gateway.
@@ -457,7 +457,7 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 	 *
 	 * @return array
 	 */
-	private function verify_customer_data($response){
+	public function verify_customer_data($response){
 
 		$error = array();
 
