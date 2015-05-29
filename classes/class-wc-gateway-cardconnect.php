@@ -273,7 +273,7 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 	public function admin_options(){
 		?>
 
-		<img style="margin:20px 0 5px 10px" width="200" height="29" src="<?php echo plugins_url('assets/cardconnect-logo.png', __FILE__) ?>" />
+		<img style="margin:20px 0 5px 10px" width="200" height="29" src="<?php echo plugins_url('assets/cardconnect-logo.png', dirname(__FILE__)) ?>" />
 
 		<?php if(empty($this->api_credentials['mid'])): ?>
 			<div class="card-connect-banner updated">
