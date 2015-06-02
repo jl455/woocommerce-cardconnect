@@ -230,15 +230,15 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 	 * @since 0.6.0
 	 */
 	public function process_subscription_payment($order = '', $amount = 0){
-		$user_id = get_current_user_id();
+		$user_id = $order->user_id;
 		$profile_id = $this->profiles_enabled ? $this->saved_cards->get_user_profile_id($user_id) : false;
-		$saved_card_id = $this->saved_cards->get_user_cards(get_current_user_id());
+		$saved_card_id = $this->saved_cards->get_user_cards($user_id);
 		$saved_card_id = array_keys($saved_card_id)[0];
 		if ($profile_id) {
 			$request = array(
 				'merchid'   => $this->api_credentials['mid'],
-				'cvv2'      => wc_clean($_POST['card_connect-card-cvc']),
 				'amount'    => $amount * 100,
+				'cvv2'      => wc_clean($_POST['card_connect-card-cvc']),
 				'currency'  => "USD",
 				'orderid'   => sprintf(__('%s - Order #%s', 'woocommerce'), esc_html(get_bloginfo('name', 'display')), $order->get_order_number()),
 				'name'      => trim( $order->billing_first_name . ' ' . $order->billing_last_name ),
