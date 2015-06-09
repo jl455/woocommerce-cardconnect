@@ -1,4 +1,5 @@
 <fieldset id="card_connect-cc-form">
+	<p class="form-row form-row-wide"><?php echo $description; ?></p>
 	<p class="form-row form-row-wide">
 		<p style="margin: 0 0 5px;">Accepting:</p>
 		<ul class="card-connect-allowed-cards"><?php echo $card_icons; ?></ul>

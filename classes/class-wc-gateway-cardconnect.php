@@ -507,7 +507,8 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 		$template_params = array(
 			'card_icons' => $card_icons,
 			'is_sandbox' => $isSandbox,
-			'profiles_enabled' => $this->profiles_enabled
+			'profiles_enabled' => $this->profiles_enabled,
+			'description' => $this->description
 		);
 
 		if($this->profiles_enabled){
