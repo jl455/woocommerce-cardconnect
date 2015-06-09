@@ -18,23 +18,23 @@ class CardConnectSavedCards {
 	}
 
 	public function get_user_cards($user_id){
-		$cards = get_user_meta($user_id, SAVED_CARDS_META_KEY, true);
+		$cards = get_user_meta($user_id, self::SAVED_CARDS_META_KEY, true);
 		return !empty($cards) ? unserialize($cards) : false;
 	}
 
 	public function save_user_card($user_id, $card){
 		$current_cards = $this->get_user_cards($user_id);
 		$updated_cards = ($current_cards ? $current_cards : array()) + $card;
-		return update_user_meta($user_id, SAVED_CARDS_META_KEY, serialize($updated_cards));
+		return update_user_meta($user_id, self::SAVED_CARDS_META_KEY, serialize($updated_cards));
 	}
 
 	public function get_user_profile_id($user_id){
-		$profile_id = get_user_meta($user_id, PROFILE_ID_META_KEY, true);
+		$profile_id = get_user_meta($user_id, self::PROFILE_ID_META_KEY, true);
 		return !empty($profile_id) ? $profile_id : false;
 	}
 
 	public function set_user_profile_id($user_id, $profile_id){
-		return update_user_meta($user_id, PROFILE_ID_META_KEY, $profile_id);
+		return update_user_meta($user_id, self::PROFILE_ID_META_KEY, $profile_id);
 	}
 
 	public function add_account_to_profile($user_id, $card_alias, $request){

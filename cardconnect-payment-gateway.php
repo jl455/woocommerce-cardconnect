@@ -1,15 +1,20 @@
 <?php
-/*
-Plugin Name: CardConnect Payment Gateway
-Plugin URI: http://sofcorp.com/
-Description: Accept credit card payments in your WooCommerce store!
-Version: 0.5.0
-Author: SOF Inc <eran@sofcorp.com>
-Author URI: http://sofcorp.com
+/**
+ * Plugin Name: CardConnect Payment Gateway
+ * Plugin URI: http://sofcorp.com/
+ * Description: Accept credit card payments in your WooCommerce store!
+ * Version: 1.0.0
+ * Author: SOF Inc <gregp@sofcorp.com>
+ * Author URI: http://sofcorp.com
+ * License: GNU General Public License v2
+ * License URI: http://www.gnu.org/licenses/gpl-2.0.html
+ *
+ * @version 1.0.0
+ * @author Sof, Inc
+ */
 
-	Copyright: © 2015 SOF Inc <eran@sofcorp.com>.
-	License: GNU General Public License v2
-	License URI: http://www.gnu.org/licenses/gpl-2.0.html
+/*
+	Copyright: © 2015 SOF Inc <gregp@sofcorp.com>.
 */
 
 if(!defined('ABSPATH')){
@@ -22,6 +27,13 @@ define('WC_CARDCONNECT_TEMPLATE_PATH', untrailingslashit(plugin_dir_path(__FILE_
 define('WC_CARDCONNECT_PLUGIN_URL', untrailingslashit(plugins_url('', __FILE__)));
 
 add_action('plugins_loaded', 'CardConnectPaymentGateway_init', 0);
+
+/**
+ * Initializes Card Connect Gateway
+ *
+ * @return void
+ * @since 0.5.0
+ */
 function CardConnectPaymentGateway_init(){
 
 	// Append local includes dir to include path
@@ -34,13 +46,21 @@ function CardConnectPaymentGateway_init(){
 	// Include Classes
 	include_once 'classes/class-wc-gateway-cardconnect.php';
 	include_once 'classes/class-wc-gateway-cardconnect-saved-cards.php';
+	if(class_exists('WC_Subscriptions_Order')){
+		include_once 'classes/class-wc-gateway-cardconnect-addons.php';
+	}
+
 
 	/**
 	 * Add the Gateway to WooCommerce
 	 **/
 	add_filter('woocommerce_payment_gateways', 'woocommerce_add_gateway_CardConnectPaymentGateway');
 	function woocommerce_add_gateway_CardConnectPaymentGateway($methods){
-		$methods[] = 'CardConnectPaymentGateway';
+		if(class_exists('WC_Subscriptions_Order')){
+			$methods[] = 'CardConnectPaymentGatewayAddons';
+		}else{
+			$methods[] = 'CardConnectPaymentGateway';
+		}
 		return $methods;
 	}
 
