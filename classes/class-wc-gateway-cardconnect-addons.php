@@ -102,7 +102,13 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 		}
 
 		//Authorizes transaction to be processed
-		$response = $this->get_cc_client()->authorizeTransaction($request);
+		if ( !is_null( $this->get_cc_client() ) {
+			$response = $this->get_cc_client()->authorizeTransaction($request);
+		} else {
+			wc_add_notice(__('Payment error: ', 'woothemes') . 'CardConnect is not configured! ', 'error');
+			$order->add_order_note( 'CardConnect is not configured!' );
+			return;
+		}
 
 		// 'A' response is for accepted
 		if('A' === $response['respstat']){
@@ -116,9 +122,15 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 					'currency' => 'USD',
 					'retref' => $response['retref'],
 				);
-
-				$void_response = $this->get_cc_client()->voidTransaction($request);
-
+			
+				if ( !is_null( $this->get_cc_client() ) {
+					$void_response = $this->get_cc_client()->voidTransaction($request);
+				} else {
+					wc_add_notice(__('Payment error: ', 'woothemes') . 'CardConnect is not configured! ', 'error');
+					$order->add_order_note( 'CardConnect is not configured!' );
+					return;
+				}
+				
 				if($void_response['authcode'] === 'REVERS'){
 					$order->update_status('failed', __('Payment Failed', 'cardconnect-payment-gateway'));
 					foreach($order_verification['errors'] as $error){
@@ -251,7 +263,13 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 				'profile'		=> "$profile_id/$saved_card_id",
 			);
 
-			$response = $this->get_cc_client()->authorizeTransaction($request);
+			if ( !is_null( $this->get_cc_client() ) {
+				$response = $this->get_cc_client()->authorizeTransaction($request);
+			} else {
+				wc_add_notice(__('Payment error: ', 'woothemes') . 'CardConnect is not configured! ', 'error');
+				$order->add_order_note( 'CardConnect is not configured!' );
+				return;
+			}
 
 			if('A' === $response['respstat']){
 
@@ -264,7 +282,13 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 						'retref' => $response['retref'],
 					);
 
-					$void_response = $this->get_cc_client()->voidTransaction($request);
+					if ( !is_null( $this->get_cc_client() ) {
+						$void_response = $this->get_cc_client()->voidTransaction($request);
+					} else {
+						wc_add_notice(__('Payment error: ', 'woothemes') . 'CardConnect is not configured! ', 'error');
+						$order->add_order_note( 'CardConnect is not configured!' );
+						return;
+					}
 
 					if($void_response['authcode'] === 'REVERS'){
 						$order->update_status('failed', __('Payment Failed', 'cardconnect-payment-gateway'));
