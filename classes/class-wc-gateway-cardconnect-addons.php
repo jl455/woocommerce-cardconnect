@@ -102,7 +102,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 		}
 
 		//Authorizes transaction to be processed
-		if ( !is_null( $this->get_cc_client() ) {
+		if ( !is_null( $this->get_cc_client() ) ) {
 			$response = $this->get_cc_client()->authorizeTransaction($request);
 		} else {
 			wc_add_notice(__('Payment error: ', 'woothemes') . 'CardConnect is not configured! ', 'error');
@@ -123,7 +123,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 					'retref' => $response['retref'],
 				);
 			
-				if ( !is_null( $this->get_cc_client() ) {
+				if ( !is_null( $this->get_cc_client() ) ) {
 					$void_response = $this->get_cc_client()->voidTransaction($request);
 				} else {
 					wc_add_notice(__('Payment error: ', 'woothemes') . 'CardConnect is not configured! ', 'error');
@@ -263,7 +263,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 				'profile'		=> "$profile_id/$saved_card_id",
 			);
 
-			if ( !is_null( $this->get_cc_client() ) {
+			if ( !is_null( $this->get_cc_client() ) ) {
 				$response = $this->get_cc_client()->authorizeTransaction($request);
 			} else {
 				wc_add_notice(__('Payment error: ', 'woothemes') . 'CardConnect is not configured! ', 'error');
@@ -282,7 +282,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 						'retref' => $response['retref'],
 					);
 
-					if ( !is_null( $this->get_cc_client() ) {
+					if ( !is_null( $this->get_cc_client() ) ) {
 						$void_response = $this->get_cc_client()->voidTransaction($request);
 					} else {
 						wc_add_notice(__('Payment error: ', 'woothemes') . 'CardConnect is not configured! ', 'error');
