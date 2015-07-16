@@ -3,7 +3,7 @@ Contributors: jle1
 Tags: woocommerce, payment, gateway, cardconnect
 Requires at least: 3.5
 Tested up to: 4.2.2
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -44,6 +44,9 @@ For further info or support, contact your CardConnect representative.
 
 == Changelog ==
 
+= 1.0.1 =
+* Bug Fix: Fixed bug that some users experienced where WooCommerce settings page would be blank white page
+
 = 1.0.0 =
 * Public Release
 * Bug Fixes
@@ -69,6 +72,9 @@ For further info or support, contact your CardConnect representative.
 and auth only/capture transactions.
 
 == Upgrade Notice ==
+
+= 1.0.1 =
+Upgrade for bug fixes
 
 = 1.0.0 =
 Initial repository version
