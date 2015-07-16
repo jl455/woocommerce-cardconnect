@@ -4,7 +4,7 @@ WooCommerce CardConnect Gateway
 This is the development repository for the WooCommerce CardConnect payment gateway.  
 If you wish to download or install this plugin, you should do so via the offical WordPress plugin repository.
 
-[link to public WP page here]
+[WordPress.org Plugin Page](https://wordpress.org/plugins/cardconnect-payment-module/)
 
 ## Development
 
