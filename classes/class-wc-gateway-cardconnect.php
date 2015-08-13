@@ -326,7 +326,7 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 		$order = new WC_Order($order_id);
 		$user_id = get_current_user_id();
 
-		$profile_id = $this->profiles_enabled ? $this->saved_cards->get_user_profile_id($user_id) : false;
+		$profile_id = ($this->profiles_enabled && $this->saved_cards) ? $this->saved_cards->get_user_profile_id($user_id) : false;
 
 		$token = isset( $_POST['card_connect_token'] ) ? wc_clean( $_POST['card_connect_token'] ) : false;
 		$card_name = isset( $_POST['card_connect-card-name'] ) ? wc_clean( $_POST['card_connect-card-name'] ) : false;
@@ -523,7 +523,7 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 			'description' => $this->description
 		);
 
-		if($this->profiles_enabled){
+		if($this->profiles_enabled && $this->saved_cards){
 			$template_params['saved_cards'] = $this->saved_cards->get_user_cards(get_current_user_id());
 		}
 
