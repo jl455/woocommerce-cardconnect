@@ -65,6 +65,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 			'country'   => $order->billing_country,
 			'postal'    => $order->billing_postcode,
 			'capture'   => $this->mode === 'capture' ? 'Y' : 'N',
+			'frontendid'=> $this->front_end_id,
 		);
 
 
@@ -118,9 +119,10 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 			if(!$order_verification['is_valid']){
 
 				$request = array(
-					'merchid' => $this->api_credentials['mid'],
-					'currency' => 'USD',
-					'retref' => $response['retref'],
+					'merchid' 	=> $this->api_credentials['mid'],
+					'currency' 	=> 'USD',
+					'retref' 	=> $response['retref'],
+					'frontendid'=> $this->front_end_id,
 				);
 			
 				if ( !is_null( $this->get_cc_client() ) ) {
@@ -260,7 +262,8 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 				'country'   => $order->billing_country,
 				'postal'    => $order->billing_postcode,
 				'capture'   => $this->mode === 'capture' ? 'Y' : 'N',
-				'profile'		=> "$profile_id/$saved_card_id",
+				'profile'	=> "$profile_id/$saved_card_id",
+				'frontendid'=> $this->front_end_id,
 			);
 
 			if ( !is_null( $this->get_cc_client() ) ) {
@@ -277,9 +280,10 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 				if(!$order_verification['is_valid']){
 
 					$request = array(
-						'merchid' => $this->api_credentials['mid'],
-						'currency' => 'USD',
-						'retref' => $response['retref'],
+						'merchid' 	=> $this->api_credentials['mid'],
+						'currency' 	=> 'USD',
+						'retref' 	=> $response['retref'],
+						'frontendid'=> $this->front_end_id,
 					);
 
 					if ( !is_null( $this->get_cc_client() ) ) {

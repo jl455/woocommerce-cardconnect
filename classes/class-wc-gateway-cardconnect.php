@@ -23,6 +23,8 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 	private $registration_enabled;
 	public $profiles_enabled;
 	public $saved_cards;
+	public $front_end_id = "woocommerce";	// to be sent in every cardConnect API request as field "frontendid"
+
 
 	/**
 	 * Constructor for the gateway.
@@ -352,6 +354,7 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 			'country'   => $order->billing_country,
 			'postal'    => $order->billing_postcode,
 			'capture'   => $this->mode === 'capture' ? 'Y' : 'N',
+			'frontendid'=> $this->front_end_id,
 		);
 
 		if($saved_card_id){
@@ -405,9 +408,10 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 			if(!$order_verification['is_valid']){
 
 				$request = array(
-					'merchid' => $this->api_credentials['mid'],
-					'currency' => 'USD',
-					'retref' => $response['retref'],
+					'merchid' 	=> $this->api_credentials['mid'],
+					'currency' 	=> 'USD',
+					'retref' 	=> $response['retref'],
+					'frontendid'=> $this->front_end_id,
 				);
 
 				if ( !is_null( $this->get_cc_client() ) ) {
@@ -552,10 +556,11 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 		$retref = get_post_meta($order_id, '_transaction_id', true);
 
 		$request = array(
-			'merchid' => $this->api_credentials['mid'],
-			'amount' => $amount * 100,
-			'currency' => 'USD',
-			'retref' => $retref,
+			'merchid' 	=> $this->api_credentials['mid'],
+			'amount' 	=> $amount * 100,
+			'currency' 	=> 'USD',
+			'retref' 	=> $retref,
+			'frontendid'=> $this->front_end_id,
 		);
 
 		if ( !is_null( $this->get_cc_client() ) ) {
