@@ -2,8 +2,8 @@
 Contributors: jle1
 Tags: woocommerce, payment, gateway, cardconnect
 Requires at least: 3.5
-Tested up to: 4.3
-Stable tag: 1.0.3
+Tested up to: 4.4
+Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,6 +43,11 @@ You may need to request that your hosting provider open certain ports. Specific 
 For further info or support, contact your CardConnect representative.
 
 == Changelog ==
+= 1.0.4 =
+* We now check that your server has the required ports open to allow communication with the CardConnect servers.  You'll
+see this information at the bottom of your (wp-admin > WooCommerce > Settings > Checkout > CardConnect) settings screen
+in the section titled 'Warnings/Messages'.  Refresh this page to re-perform the check.
+
 = 1.0.3 =
 * Minor CardConnect API update
 

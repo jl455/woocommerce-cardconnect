@@ -34,53 +34,54 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 	 *
 	 * @since 0.6.0
 	 */
-	public function process_subscription($order_id){
+	public function process_subscription($order_id)
+	{
 		global $woocommerce;
 		$order = new WC_Order($order_id);
 		$user_id = get_current_user_id();
 
 		$profile_id = $this->profiles_enabled ? $this->saved_cards->get_user_profile_id($user_id) : false;
 
-		$token = isset( $_POST['card_connect_token'] ) ? wc_clean( $_POST['card_connect_token'] ) : false;
-		$card_name = isset( $_POST['card_connect-card-name'] ) ? wc_clean( $_POST['card_connect-card-name'] ) : false;
+		$token = isset($_POST['card_connect_token']) ? wc_clean($_POST['card_connect_token']) : false;
+		$card_name = isset($_POST['card_connect-card-name']) ? wc_clean($_POST['card_connect-card-name']) : false;
 		$store_new_card = isset($_POST['card_connect-save-card']) ? wc_clean($_POST['card_connect-save-card']) : false;
-		$saved_card_id = isset( $_POST['card_connect-cards'] ) ? wc_clean( $_POST['card_connect-cards'] ) : false;
+		$saved_card_id = isset($_POST['card_connect-cards']) ? wc_clean($_POST['card_connect-cards']) : false;
 		$card_alias = isset($_POST['card_connect-new-card-alias']) ? wc_clean($_POST['card_connect-new-card-alias']) : false;
 
-		if(!$token && !$saved_card_id){
+		if (!$token && !$saved_card_id) {
 			wc_add_notice(__('Payment error: ', 'woothemes') . 'Please make sure your card details have been entered correctly and that your browser supports JavaScript.', 'error');
 			return;
 		}
 
 		$request = array(
-			'merchid'   => $this->api_credentials['mid'],
-			'cvv2'      => wc_clean($_POST['card_connect-card-cvc']),
-			'amount'    => $order->order_total * 100,
-			'currency'  => "USD",
-			'orderid'   => sprintf(__('%s - Order #%s', 'woocommerce'), esc_html(get_bloginfo('name', 'display')), $order->get_order_number()),
-			'name'      => $card_name ? $card_name : trim( $order->billing_first_name . ' ' . $order->billing_last_name ),
-			'street'    => $order->billing_address_1,
-			'city'      => $order->billing_city,
-			'region'    => $order->billing_state,
-			'country'   => $order->billing_country,
-			'postal'    => $order->billing_postcode,
-			'capture'   => $this->mode === 'capture' ? 'Y' : 'N',
-			'frontendid'=> $this->front_end_id,
+			'merchid' 	=> $this->api_credentials['mid'],
+			'cvv2' 		=> wc_clean($_POST['card_connect-card-cvc']),
+			'amount' 	=> $order->order_total * 100,
+			'currency' 	=> "USD",
+			'orderid' 	=> sprintf(__('%s - Order #%s', 'woocommerce'), esc_html(get_bloginfo('name', 'display')), $order->get_order_number()),
+			'name' 		=> $card_name ? $card_name : trim($order->billing_first_name . ' ' . $order->billing_last_name),
+			'street' 	=> $order->billing_address_1,
+			'city' 		=> $order->billing_city,
+			'region' 	=> $order->billing_state,
+			'country' 	=> $order->billing_country,
+			'postal' 	=> $order->billing_postcode,
+			'capture' 	=> $this->mode === 'capture' ? 'Y' : 'N',
+			'frontendid' => $this->front_end_id,
 		);
 
 
-		if($saved_card_id){
+		if ($saved_card_id) {
 
 			// Payment is using a stored card, no token or account number to pass
 			$request['profile'] = "$profile_id/$saved_card_id";
 
-		}else{
+		} else {
 
 			// Either a basic purchase or adding a new card. Either way, include the expiration date
-			$request['expiry'] = preg_replace('/[^\d]/i','', wc_clean($_POST['card_connect-card-expiry']));
+			$request['expiry'] = preg_replace('/[^\d]/i', '', wc_clean($_POST['card_connect-card-expiry']));
 
 			// Adding an additional card to an existing profile -- This requires a separate API call, handled in `add_account_to_profile`
-			if($profile_id){
+			if ($profile_id) {
 
 				$request['profile'] = $profile_id;
 
@@ -95,24 +96,33 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 				$request['profile'] = "$profile_id/$new_account_id";
 
 				// Adding a new card, no existing profile
-			}else{
+			} else {
 				$request['profile'] = 'Y';
 				$request['account'] = $token;
 			}
 
 		}
 
+
 		//Authorizes transaction to be processed
-		if ( !is_null( $this->get_cc_client() ) ) {
+		if (!is_null($this->get_cc_client())) {
 			$response = $this->get_cc_client()->authorizeTransaction($request);
 		} else {
 			wc_add_notice(__('Payment error: ', 'woothemes') . 'CardConnect is not configured! ', 'error');
-			$order->add_order_note( 'CardConnect is not configured!' );
+			$order->add_order_note('CardConnect is not configured!');
 			return;
 		}
 
-		// 'A' response is for accepted
-		if('A' === $response['respstat']){
+
+		// Handles the transaction response from the CardConnect API Rest Client
+		if ( (!$response) || ('' === $response) ) {
+			// got no response back from the CardConnect API endpoint request.
+			// likely that the hosting server is unable to initiate/complete the CURL request to the API.
+			wc_add_notice(__('Payment error: ', 'woothemes') . 'A critical server error prevented this transaction from completing. Please confirm your information and try again.', 'error');
+			$order->add_order_note(sprintf(__('CardConnect failed transaction. Response: %s', 'woocommerce'), 'CURL error?'));
+		}
+		elseif( ($response['respstat']) && ('A' === $response['respstat']) ) {
+			// 'A' response is for 'Approved'
 
 			// Need to verify customer data before marking complete
 			$order_verification = $this->verify_customer_data($response);
@@ -170,12 +180,16 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 				'redirect' => $this->get_return_url($order)
 			);
 
-		}else if('C' === $response['respstat']){
+		}
+		elseif( ($response['respstat']) && ('C' === $response['respstat']) ) {
+			// 'C' response if for 'Declined'
+
 			wc_add_notice(__('Payment error: ', 'woothemes') . 'Order Declined : ' . $response['resptext'], 'error');
 			$order->add_order_note(sprintf(__( 'CardConnect declined transaction. Response: %s', 'woocommerce'), $response['resptext']));
-		}else{
+		}
+		else{
 			wc_add_notice(__('Payment error: ', 'woothemes') . 'An error prevented this transaction from completing. Please confirm your information and try again.', 'error');
-			$order->add_order_note(sprintf(__( 'CardConnect failed transaction. Response: %s', 'woocommerce'), $response['resptext']));
+			$order->add_order_note(sprintf(__( 'CardConnect failed transaction. Response: %s', 'woocommerce'), '???'));
 		}
 
 		$order->update_status('failed', __('Payment Failed', 'cardconnect-payment-gateway'));
@@ -266,6 +280,8 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 				'frontendid'=> $this->front_end_id,
 			);
 
+
+			//Authorizes transaction to be processed
 			if ( !is_null( $this->get_cc_client() ) ) {
 				$response = $this->get_cc_client()->authorizeTransaction($request);
 			} else {
@@ -274,7 +290,16 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 				return;
 			}
 
-			if('A' === $response['respstat']){
+
+			// Handles the transaction response from the CardConnect API Rest Client
+			if ( (!$response) || ('' === $response) ) {
+				// got no response back from the CardConnect API endpoint request.
+				// likely that the hosting server is unable to initiate/complete the CURL request to the API.
+				wc_add_notice(__('Payment error: ', 'woothemes') . 'A critical server error prevented this transaction from completing. Please confirm your information and try again.', 'error');
+				$order->add_order_note(sprintf(__('CardConnect failed transaction. Response: %s', 'woocommerce'), 'CURL error?'));
+			}
+			elseif( ($response['respstat']) && ('A' === $response['respstat']) ) {
+				// 'A' response is for 'Approved'
 
 				$order_verification = $this->verify_customer_data($response);
 				if(!$order_verification['is_valid']){
@@ -314,11 +339,15 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 
 				return true;
 
-			}else if('C' === $response['respstat']){
+			}
+			elseif ( ($response['respstat']) && ('C' === $response['respstat']) ) {
+				// 'C' response if for 'Declined'
+
 				$order->add_order_note(sprintf(__( 'CardConnect declined transaction. Response: %s', 'woocommerce'), $response['resptext']));
 				wc_add_notice(__('Payment error: ', 'woothemes') . 'Order Declined : ' . $response['resptext'], 'error');
-			}else{
-				$order->add_order_note(sprintf(__( 'CardConnect failed transaction. Response: %s', 'woocommerce'), $response['resptext']));
+			}
+			else{
+				$order->add_order_note(sprintf(__( 'CardConnect failed transaction. Response: %s', 'woocommerce'), '???'));
 				wc_add_notice(__('Payment error: ', 'woothemes') . 'An error prevented this transaction from completing. Please confirm your information and try again.', 'error');
 			}
 		}

@@ -265,6 +265,68 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 		);
 	}
 
+
+	/**
+	 *
+	 * override of same function in /plugins/woocommerce/includes/abstracts/abstract-wc-settings-api.php
+	 *
+	 * some cardconnect-specific checks are performed and we then append any warning msgs to the bottom of
+	 * the form_fields so that the msgs are easily visible and right near the 'save' button.
+	 *
+	 */
+	public function generate_settings_html( $form_fields = array() ) {
+		if ( empty( $form_fields ) ) {
+			$form_fields = $this->get_form_fields();
+		}
+
+		$html = '';
+		foreach ( $form_fields as $k => $v ) {
+
+			if ( ! isset( $v['type'] ) || ( $v['type'] == '' ) ) {
+				$v['type'] = 'text'; // Default to "text" field type.
+			}
+
+			if ( method_exists( $this, 'generate_' . $v['type'] . '_html' ) ) {
+				$html .= $this->{'generate_' . $v['type'] . '_html'}( $k, $v );
+			} else {
+				$html .= $this->{'generate_text_html'}( $k, $v );
+			}
+		}
+
+
+		// cardconnect-specific checks
+		$warning_msgs = '';
+		// ensure that the sandbox and production ports are open on the server
+		foreach( $this->cc_ports as $env => $port ) {
+			$fsockURL = 'ssl://' . $this->site . '.' . $this->domain;
+			$fp = fsockopen($fsockURL, $port, $errno, $errstr, 5);
+			if (!$fp) {
+				// port is closed or blocked
+//				$warning_msgs .= "$fsockURL<br>";	// debug
+				$warning_msgs .= "Port $port is closed.<br>";
+				$warning_msgs .= "You will not be able to process transactions using the <i>$env</i> cardconnect environment.<br>";
+				$warning_msgs .= "Please request that your server admin or hosting provider opens port $port.<br><br>";
+			} else {
+				// port is open and available
+				fclose($fp);
+			}
+		}
+
+
+		// append any cardconnect-specific messages to the bottom of the form_fields.
+		if ( $warning_msgs == '' ) {
+			$warning_msgs = 'no warnings/messages to report  :)';
+			$html .= '<tr><th scope="row" class="titledesc">Warnings/Messages</th>';
+			$html .= '<td class="forminp">' . $warning_msgs . '</td></tr>';
+		} else {
+			$html .= '<tr><th scope="row" class="titledesc" style="color: red;">Warnings/Messages</th>';
+			$html .= '<td class="forminp" style="color: red; font-weight: bold;">' . $warning_msgs . '</td></tr>';
+		}
+
+		echo $html;
+	}
+
+
 	/**
 	 * Admin Panel Options
 	 * Include CardConnect logo and add some JS for revealing inputs for sandbox vs production
@@ -394,6 +456,8 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 
 		}
 
+
+		//Authorizes transaction to be processed
 		if ( !is_null( $this->get_cc_client() ) ) {
 			$response = $this->get_cc_client()->authorizeTransaction($request);
 		} else {
@@ -402,7 +466,16 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 			return;
 		}
 
-		if('A' === $response['respstat']){
+
+		// Handles the transaction response from the CardConnect API Rest Client
+		if ( (!$response) || ('' === $response) ) {
+			// got no response back from the CardConnect API endpoint request.
+			// likely that the hosting server is unable to initiate/complete the CURL request to the API.
+			wc_add_notice(__('Payment error: ', 'woothemes') . 'A critical server error prevented this transaction from completing. Please confirm your information and try again.', 'error');
+			$order->add_order_note(sprintf(__('CardConnect failed transaction. Response: %s', 'woocommerce'), 'CURL error?'));
+		}
+		elseif( ($response['respstat']) && ('A' === $response['respstat']) ) {
+			// 'A' response is for 'Approved'
 
 			$order_verification = $this->verify_customer_data($response);
 			if(!$order_verification['is_valid']){
@@ -455,12 +528,16 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 				'redirect' => $this->get_return_url($order)
 			);
 
-		}else if('C' === $response['respstat']){
+		}
+		elseif ( ($response['respstat']) && ('C' === $response['respstat']) ) {
+			// 'C' response if for 'Declined'
+
 			wc_add_notice(__('Payment error: ', 'woothemes') . 'Order Declined : ' . $response['resptext'], 'error');
 			$order->add_order_note(sprintf(__( 'CardConnect declined transaction. Response: %s', 'woocommerce'), $response['resptext']));
-		}else{
+		}
+		else {
 			wc_add_notice(__('Payment error: ', 'woothemes') . 'An error prevented this transaction from completing. Please confirm your information and try again.', 'error');
-			$order->add_order_note(sprintf(__( 'CardConnect failed transaction. Response: %s', 'woocommerce'), $response['resptext']));
+			$order->add_order_note(sprintf(__( 'CardConnect failed transaction. Response: %s', 'woocommerce'), '???'));
 		}
 
 		$order->update_status('failed', __('Payment Failed', 'cardconnect-payment-gateway'));
