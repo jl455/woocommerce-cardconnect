@@ -54,6 +54,7 @@ var SavedCards = (function () {
         var CREATE_ACCOUNT_DISABLED_MESSAGE = 'You must check "Create an account" above in order to save your card.';
         var $ = jQuery;
         var $cardToggle = $(SAVE_CARD_TOGGLE);
+        var $cardToggleLabelText = $('#card_connect-save-card-label-text');
         var $cardNickname = $(CARD_NICKNAME);
         var $createAccount = $(WOOCOMMERCE_CREATE_ACCOUNT);
         var $savedCard = $(SAVED_CARD);
@@ -65,28 +66,60 @@ var SavedCards = (function () {
             EXPIRY
         ].join(','));
         var userSignedIn = wooCardConnect.userSignedIn;
-        if ($createAccount.length === 0 && !userSignedIn)
-            return;
-        $cardToggle.on('change', controlNicknameField);
-        $createAccount.on('change', controlSaveCardToggle);
-        $savedCard.on('change', controlCardInputFields);
+        if ($createAccount.length === 0 && !userSignedIn) {
+            // there is no 'create account' checkbox because either:
+            // A) WooCommerce > Settings > Checkout > Enable Guest Checkout (is UNCHECKED)
+            // or
+            // B) There is a Subscription (as opposed to a regular product) in the cart and
+            //    Subscriptions always require a WP account to be created.  Thus no 'create account' checkbox.
+            //
+            // In this case, it is REQUIRED that the user create a WP account and this unnecessary to display the
+            // 'create account' checkbox.
+            //console.log('no \'create account\' checkbox');
+            // ensure that the 'card nickname' field enable/disable corresponds to the 'save this card' checkbox setting
+            $cardToggle.on('change', controlNicknameField);
+            // enable the 'save this card' checkbox
+            $cardToggle.prop('disabled', false);
+        }
+        else {
+            //console.log('\'create account\' checkbox');
+            $cardToggle.on('change', controlNicknameField);
+            $createAccount.on('change', controlSaveCardToggle);
+            $savedCard.on('change', controlCardInputFields);
+        }
         function controlNicknameField() {
+            //console.log('controlNicknameField()');
+            // is the 'save this card' checkbox checked or not?
             var isSet = $(this).is(':checked');
             $cardNickname.prop('disabled', !isSet);
-            if (!isSet)
+            if (!isSet) {
                 $cardNickname.val('');
+            }
         }
         function controlSaveCardToggle() {
-            if (userSignedIn)
+            //console.log('controlSaveCardToggle()');
+            if (userSignedIn) {
                 return;
-            var isSet = $(this).is(':checked');
+            }
+            // is the 'create an account' checkbox checked or not?
+            var isSet;
+            if ($createAccount.length === 0) {
+                // there is no $createAccount checkbox so we know that the user will be forced to create an account anyway
+                isSet = true;
+            }
+            else {
+                isSet = $(this).is(':checked');
+            }
             $cardToggle.prop('disabled', !isSet);
-            if (!isSet)
+            if (!isSet) {
                 $cardToggle.prop('checked', false);
+            }
             setTooltips(isSet);
         }
         controlSaveCardToggle();
         function controlCardInputFields() {
+            //console.log('controlCardInputFields()');
+            // which of the 'saved cards' dropdown items is selected?
             var value = $(this).find(':selected').val();
             $paymentFields.prop('disabled', !!value);
             if (value) {
@@ -94,9 +127,16 @@ var SavedCards = (function () {
             }
         }
         function setTooltips(isEnabled) {
-            var titleText = isEnabled ? '' : CREATE_ACCOUNT_DISABLED_MESSAGE;
-            $cardToggle.attr('title', titleText);
-            $cardNickname.attr('title', titleText);
+            //console.log('setTooltips(isEnabled= ' + isEnabled + ' )');
+            // isEnabled corresponds to whether 'create an account' is checked or not.
+            var labelText;
+            if (isEnabled) {
+                labelText = 'Save this card';
+            }
+            else {
+                labelText = 'Save this card (' + CREATE_ACCOUNT_DISABLED_MESSAGE + ')';
+            }
+            $cardToggleLabelText.text(labelText);
         }
     };
     SavedCards.submitHandler = function () {
@@ -115,9 +155,19 @@ jQuery(function ($) {
     var cc = new card_connect_tokenizer_1.default($, wooCardConnect.apiEndpoint);
     var $form = $('form.checkout, form#order_review');
     var $errors;
+    // !! 'updated_checkout' is not fired for the 'payment method change' form aka 'form#order_review'
     $('body').on('updated_checkout', function () {
+        //console.log("!!! caught updated_checkout");
         if (wooCardConnect.profilesEnabled)
             saved_cards_1.default.init();
+    });
+    //'updated_checkout' (above) was not fired for the 'payment method change' form aka 'form#order_review'
+    // so this was added.
+    $('form#order_review').ready(function () {
+        //console.log('ready');
+        if (wooCardConnect.profilesEnabled) {
+            saved_cards_1.default.init();
+        }
     });
     // Simulate some text entry to get jQuery Payment to reformat numbers
     if (!isLive) {
@@ -126,8 +176,10 @@ jQuery(function ($) {
         });
     }
     function getToken() {
-        if (checkAllowSubmit())
-            return false;
+        // why is/was this here?
+        //if (checkAllowSubmit()) {
+        //    return false;
+        //}
         var $ccInput = $form.find('#card_connect-card-number');
         var creditCard = $ccInput.val();
         if (creditCard.indexOf('\u2022') > -1)
@@ -173,6 +225,7 @@ jQuery(function ($) {
         return true;
     }
     function checkAllowSubmit() {
+        // if we have a token OR a 'saved card' is selected, return FALSE
         return 0 !== $('input.card-connect-token', $form).size() || $(SAVED_CARDS_SELECT).val();
     }
     function checkCardType(cardNumber) {

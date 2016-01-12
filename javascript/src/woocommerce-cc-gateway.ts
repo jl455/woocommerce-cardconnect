@@ -14,9 +14,24 @@ jQuery($ => {
   let $form = $('form.checkout, form#order_review');
   let $errors;
 
-  $('body').on('updated_checkout', ()=>{
-    if(wooCardConnect.profilesEnabled) SavedCards.init();
+
+  // !! 'updated_checkout' is not fired for the 'payment method change' form aka 'form#order_review'
+  $('body').on('updated_checkout', function () {
+    //console.log("!!! caught updated_checkout");
+    if (wooCardConnect.profilesEnabled)
+      SavedCards.init();
   });
+
+
+  //'updated_checkout' (above) was not fired for the 'payment method change' form aka 'form#order_review'
+  // so this was added.
+  $('form#order_review').ready( function() {
+    //console.log('ready');
+    if (wooCardConnect.profilesEnabled) {
+      SavedCards.init();
+    }
+  });
+
 
   // Simulate some text entry to get jQuery Payment to reformat numbers
   if(!isLive){
@@ -27,7 +42,11 @@ jQuery($ => {
 
   function getToken() : boolean {
 
-    if(checkAllowSubmit()) return false;
+    // why is/was this here?
+    //if (checkAllowSubmit()) {
+    //    return false;
+    //}
+
 
     let $ccInput = $form.find('#card_connect-card-number');
     let creditCard = $ccInput.val();
@@ -76,6 +95,7 @@ jQuery($ => {
   }
 
   function checkAllowSubmit() : boolean {
+    // if we have a token OR a 'saved card' is selected, return FALSE
     return 0 !== $('input.card-connect-token', $form).size() || $(SAVED_CARDS_SELECT).val();
   }
 

@@ -7,7 +7,11 @@
 			name="card_connect-save-card"
 			style="margin-right: 3px"
 			/>
-		<?php echo __( 'Save this card', 'woocommerce' ); ?>
+		<?php
+			echo '<span id="card_connect-save-card-label-text">';
+			echo __( 'Save this card', 'woocommerce' );
+			echo '</span>';
+		?>
 	</label>
 	<input
 		id="card_connect-new-card-alias"

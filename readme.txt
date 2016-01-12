@@ -1,9 +1,9 @@
 === Woo Commerce CardConnect Payment Gateway ===
-Contributors: jle1
+Contributors: jle1, rexak
 Tags: woocommerce, payment, gateway, cardconnect
 Requires at least: 3.5
-Tested up to: 4.3
-Stable tag: 1.0.3
+Tested up to: 4.4
+Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,7 +15,9 @@ CardConnect allows customers to checkout with a saved card.  Card details are sa
 
 Visit [CardConnect](http://cardconnect.com) for more information.
 
-Please note that WooCommerce (2.1+) must be installed and active.
+Please note that WooCommerce (v2.1+) must be installed and active.
+
+The WooCommerce Subscriptions extension (v2.x) is fully supported.
 
 == Installation ==
 
@@ -42,7 +44,22 @@ You may need to request that your hosting provider open certain ports. Specific 
 
 For further info or support, contact your CardConnect representative.
 
+= Does this support the WooCommerce Subscriptions extension? =
+
+Yes, we support both v2.x of the Subscriptions extension as well as the older v1.5.x .  We highly recommend that you use v2.x for best results.
+
 == Changelog ==
+= 2.0.0 =
+* Major release to fully support the WooCommerce Subscriptions 2.x extension plugin for the WooCommerce store.
+
+= 1.0.5 =
+* Fix: Issue with error messages covering Card Connect fields.
+
+= 1.0.4 =
+* We now check that your server has the required ports open to allow communication with the CardConnect servers.  You'll
+see this information at the bottom of your (wp-admin > WooCommerce > Settings > Checkout > CardConnect) settings screen
+in the section titled 'Warnings/Messages'.  Refresh this page to re-perform the check.
+
 = 1.0.3 =
 * Minor CardConnect API update
 
@@ -77,6 +94,8 @@ For further info or support, contact your CardConnect representative.
 and auth only/capture transactions.
 
 == Upgrade Notice ==
+= 2.0.0 =
+Major release to fully support the WooCommerce Subscriptions 2.x extension plugin for the WooCommerce store.
 
 = 1.0.1 =
 Upgrade for bug fixes

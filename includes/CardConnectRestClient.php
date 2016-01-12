@@ -246,7 +246,10 @@ class CardConnectRestClient {
 					break;
 			}
 		} catch (Exception $e) {
-			echo "Caught exception when sending request : " .  $e->getMessage();
+			// SOF customization
+			// this 'echo' causes problems since it invalidates the JSON response.  Use it for debugging only!
+			//
+			// echo "Caught exception when sending request : " .  $e->getMessage();
 		}
 
 		return $response;

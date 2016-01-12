@@ -1,15 +1,15 @@
 <?php
 /**
- * Plugin Name: CardConnect Payment Gateway
+ * Plugin Name: CardConnect Payment Gateway 2.0 BETA
  * Plugin URI: http://sofcorp.com/
  * Description: Accept credit card payments in your WooCommerce store!
- * Version: 1.0.3
+ * Version: 2.0beta02
  * Author: SOF Inc <gregp@sofcorp.com>
  * Author URI: http://sofcorp.com
  * License: GNU General Public License v2
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  *
- * @version 1.0.3
+ * @version 2.0
  * @author Sof, Inc
  */
 
@@ -47,7 +47,14 @@ function CardConnectPaymentGateway_init(){
 	include_once 'classes/class-wc-gateway-cardconnect.php';
 	include_once 'classes/class-wc-gateway-cardconnect-saved-cards.php';
 	if(class_exists('WC_Subscriptions_Order')){
-		include_once 'classes/class-wc-gateway-cardconnect-addons.php';
+
+		if ( ! function_exists( 'wcs_create_renewal_order' ) ) {
+			// Subscriptions 1.x
+			include_once 'classes/class-wc-gateway-cardconnect-addons-deprecated.php';
+		} else {
+			// Subscriptions 2.x
+			include_once 'classes/class-wc-gateway-cardconnect-addons.php';
+		}
 	}
 
 
@@ -57,7 +64,15 @@ function CardConnectPaymentGateway_init(){
 	add_filter('woocommerce_payment_gateways', 'woocommerce_add_gateway_CardConnectPaymentGateway');
 	function woocommerce_add_gateway_CardConnectPaymentGateway($methods){
 		if(class_exists('WC_Subscriptions_Order')){
-			$methods[] = 'CardConnectPaymentGatewayAddons';
+
+			if ( ! function_exists( 'wcs_create_renewal_order' ) ) {
+				// Subscriptions 1.x
+				$methods[] = 'CardConnectPaymentGatewayAddonsDeprecated';
+			} else {
+				// Subscriptions 2.x
+				$methods[] = 'CardConnectPaymentGatewayAddons';
+			}
+
 		}else{
 			$methods[] = 'CardConnectPaymentGateway';
 		}
