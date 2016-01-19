@@ -38,6 +38,7 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 		$this->supports = array(
 			'refunds',
 			'products',
+			'pre-orders',	// https://docs.woothemes.com/document/pre-orders-payment-gateway-integration-guide/
 			'subscriptions',
 			'subscription_cancellation',
 			'subscription_reactivation',
@@ -551,6 +552,240 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 //	}
 
 
+	/***********************************************************************************************************
+	 *
+	 * functions for retrieving/dealing with checkout form data, etc.
+	 *
+	 ***********************************************************************************************************/
+
+
+
+	public function get_profile_id($user_id) {
+		// gets this user's CardConnect profileid from the USER META, if one exists, else return FALSE
+		$profile_id = $this->profiles_enabled ? $this->saved_cards->get_user_profile_id($user_id) : false;
+		return $profile_id;
+	}
+
+	public function get_token() {
+		// tokenized version of the user's credit card #
+		$token = isset( $_POST['card_connect_token'] ) ? wc_clean( $_POST['card_connect_token'] ) : false;
+		return $token;
+	}
+
+	public function get_store_new_card() {
+		// correlates to the 'save this card' checkbox on the checkout form
+		$store_new_card = isset($_POST['card_connect-save-card']) ? wc_clean($_POST['card_connect-save-card']) : false;
+		return $store_new_card;
+	}
+
+	public function get_card_alias($order) {
+		// correlates to the 'card nickname' field on the checkout form
+		$card_alias = isset($_POST['card_connect-new-card-alias']) ? wc_clean($_POST['card_connect-new-card-alias']) : '';
+		if ( trim($card_alias) == '' ) {
+//			$date = date("Y-m-d H:i:s");
+			$date = date("Ymd-Hi");
+			$card_alias = $order->billing_last_name . '_' . $date;
+		} else {
+			$card_alias = trim($card_alias);
+		}
+		return $card_alias;
+	}
+
+	public function get_card_name() {
+		// correlates to the 'cardholder name (if different)' field on the checkout form
+		$card_name = isset($_POST['card_connect-card-name']) ? wc_clean($_POST['card_connect-card-name']) : false;
+		return $card_name;
+	}
+
+	public function get_saved_card_id() {
+		// correlates to the 'use a saved card' field on the checkout form
+		$saved_card_id = isset( $_POST['card_connect-cards'] ) ? wc_clean( $_POST['card_connect-cards'] ) : false;
+		return $saved_card_id;
+	}
+
+	public function get_expiry() {
+		// correlates to the 'expiry' field on the checkout form
+		$expiry = isset( $_POST['card_connect-card-expiry'] ) ? preg_replace('/[^\d]/i','', wc_clean($_POST['card_connect-card-expiry'])) : false;
+		return $expiry;
+	}
+
+	public function get_cvv2() {
+		// correlates to the 'card code cvv cvv2' field on the checkout form
+		$cvv2 = isset( $_POST['card_connect-card-cvc'] ) ? wc_clean( $_POST['card_connect-card-cvc'] ) : false;
+		return $cvv2;
+	}
+
+	/*
+	 * Utilizes the above get_* functions to get all checkout form data
+	 * and then returns an array
+	 *
+	 */
+	public function get_checkout_form_data($order, $user_id) {
+		$checkoutFormData = array();
+
+		// gets this user's CardConnect profileid from the USER META
+		$checkoutFormData['profile_id'] = $this->get_profile_id($user_id);
+
+		// tokenized version of the user's credit card #
+		$checkoutFormData['token'] = $this->get_token();
+
+		// correlates to the 'save this card' checkbox on the checkout form
+		$checkoutFormData['store_new_card'] = $this->get_store_new_card();
+
+		// correlates to the 'card nickname' field on the checkout form
+		$checkoutFormData['card_alias'] = $this->get_card_alias($order);
+
+		// correlates to the 'cardholder name (if different)' field on the checkout form
+		$checkoutFormData['card_name'] = $this->get_card_name();
+
+		// correlates to the 'use a saved card' field on the checkout form
+		$checkoutFormData['saved_card_id'] = $this->get_saved_card_id();
+
+		// correlates to the 'expiry' field on the checkout form
+		$checkoutFormData['expiry'] = $this->get_expiry();
+
+		// correlates to the 'card code cvv cvv2' field on the checkout form
+		$checkoutFormData['cvv2'] = $this->get_cvv2();
+
+
+		return $checkoutFormData;
+	}
+
+
+
+
+	/***********************************************************************************************************
+	 *
+	 * functions for handling various cardconnect API Authorization responses
+	 * $showNotices shall be set to false when these are called from non-checkout payments such as pre-order releases.
+	 * $showNotices shall be set to true when these are called from website checkout operations
+	 *
+	 ***********************************************************************************************************/
+
+
+	public function handleAuthorizationResponse_NoResponse($order, $showNotices=false) {
+		$order->add_order_note(sprintf(__('CardConnect failed transaction. Response: %s', 'woocommerce'), 'CURL error?'));
+
+		if ( $showNotices ) {
+			wc_add_notice(__('Payment error: ', 'woothemes') . 'A critical server error prevented this transaction from completing. Please confirm your information and try again.', 'error');
+		}
+
+		return array(
+			'result'   => 'fail',
+			'redirect' => ''
+		);
+
+	}
+
+
+	public function handleAuthorizationResponse_Declined($order, $response, $showNotices=false) {
+		$order->add_order_note(sprintf(__( 'CardConnect declined transaction. Response: %s', 'woocommerce'), $response['resptext']));
+		$order->update_status('failed', __('Payment Declined - ', 'cardconnect-payment-gateway'));
+
+		if ( $showNotices ) {
+			wc_add_notice(__('Payment error: ', 'woothemes') . 'Order Declined : ' . $response['resptext'], 'error');
+		}
+
+		return array(
+			'result'   => 'fail',
+			'redirect' => ''
+		);
+	}
+
+
+	public function handleAuthorizationResponse_Retry($order, $response, $showNotices=false) {
+		$order->add_order_note(sprintf(__( 'CardConnect failed transaction. Response: %s', 'woocommerce'), $response['resptext']));
+		$order->update_status('failed', __('Payment Failed - ', 'cardconnect-payment-gateway'));
+
+		if ( $showNotices ) {
+			wc_add_notice(__('Payment error: ', 'woothemes') . 'An error prevented this transaction from completing. Please confirm your information and try again.', 'error');
+		}
+
+		return array(
+			'result'   => 'fail',
+			'redirect' => ''
+		);
+	}
+
+
+	public function handleAuthorizationResponse_DefaultError($order, $showNotices=false) {
+		$order->update_status('failed', __('Payment Failed - ', 'cardconnect-payment-gateway'));
+
+		return array(
+			'result'   => 'fail',
+			'redirect' => ''
+		);
+	}
+
+
+	public function handleNoCardConnectConnection($order, $showNotices=false) {
+		$order->add_order_note( 'CardConnect is not configured!' );
+
+		if ( $showNotices ) {
+			wc_add_notice(__('Payment error: ', 'woothemes') . 'CardConnect is not configured! ', 'error');
+		}
+
+		return array(
+			'result'   => 'fail',
+			'redirect' => ''
+		);
+	}
+
+	public function handleCheckoutFormDataError($showNotices=false) {
+
+		if ( $showNotices ) {
+			wc_add_notice(__('Payment error: ', 'woothemes') . 'Please make sure your card details have been entered correctly and that your browser supports JavaScript.', 'error');
+		}
+
+		return array(
+			'result'   => 'fail',
+			'redirect' => ''
+		);
+	}
+
+	/**
+	 * Use this function if a CVV or AVS verification failed.
+	 * This function will void the invalid transaction with cardconnect and update the $order and GUI appropriately.
+	 *
+	 */
+	public function handleVerificationError($order, $order_verification, $retref, $showNotices) {
+
+		$request = array(
+			'merchid' 	=> $this->api_credentials['mid'],
+			'currency' 	=> 'USD',
+			'retref' 	=> $retref,
+			'frontendid'=> $this->front_end_id,
+		);
+
+		if ( !is_null( $this->get_cc_client() ) ) {
+			$void_response = $this->get_cc_client()->voidTransaction($request);
+		} else {
+			return $this->handleNoCardConnectConnection($order, $showNotices);
+		}
+
+		if($void_response['authcode'] === 'REVERS'){
+			$order->update_status('failed', __('Payment Failed - ', 'cardconnect-payment-gateway'));
+
+			foreach($order_verification['errors'] as $error){
+				$order->add_order_note(sprintf(__($error, 'woocommerce')));
+				if ( $showNotices ) {
+					wc_add_notice(__('Payment error: ', 'woothemes') . $error, 'error');
+				}
+			}
+			return array(
+				'result'   => 'fail',
+				'redirect' => ''
+			);
+		}
+	}
+
+
+
+
+
+
+
+
 	/**
 	 * Process the order payment status
 	 *
@@ -562,43 +797,19 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 		global $woocommerce;
 
 
+
 		// -----------------------------------------------------------------------
 		// get details about the Order submitted at Checkout
 		// -----------------------------------------------------------------------
 		$order = new WC_Order($order_id);
-//		$user_id = get_current_user_id();
+
 		$user_id = $order->user_id;
 
-		$profile_id = $this->profiles_enabled ? $this->saved_cards->get_user_profile_id($user_id) : false;
-
-		// tokenized version of the user's credit card #
-		$token = isset( $_POST['card_connect_token'] ) ? wc_clean( $_POST['card_connect_token'] ) : false;
+		$checkoutFormData = $this->get_checkout_form_data($order, $user_id);
 
 
-		// correlates to the 'save this card' checkbox on the checkout form
-		$store_new_card = isset($_POST['card_connect-save-card']) ? wc_clean($_POST['card_connect-save-card']) : false;
-
-		// correlates to the 'card nickname' field on the checkout form
-		$card_alias = isset($_POST['card_connect-new-card-alias']) ? wc_clean($_POST['card_connect-new-card-alias']) : '';
-		if ( trim($card_alias) == '' ) {
-//			$date = date("Y-m-d H:i:s");
-			$date = date("Ymd-Hi");
-			$card_alias = $order->billing_last_name . '_' . $date;
-		} else {
-			$card_alias = trim($card_alias);
-		}
-
-		// correlates to the 'cardholder name (if different)' field on the checkout form
-		$card_name = isset( $_POST['card_connect-card-name'] ) ? wc_clean( $_POST['card_connect-card-name'] ) : false;
-
-		// correlates to the 'use a saved card' field on the checkout form
-		$saved_card_id = isset( $_POST['card_connect-cards'] ) ? wc_clean( $_POST['card_connect-cards'] ) : false;
-
-
-
-		if(!$token && !$saved_card_id){
-			wc_add_notice(__('Payment error: ', 'woothemes') . 'Please make sure your card details have been entered correctly and that your browser supports JavaScript.', 'error');
-			return;
+		if ( !$checkoutFormData['token'] && !$checkoutFormData['saved_card_id'] ) {
+			$this->handleCheckoutFormDataError(true);
 		}
 
 
@@ -610,11 +821,11 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 		// this will hold all of the params sent in the cardconnect API request
 		$request = array(
 			'merchid' => $this->api_credentials['mid'],
-			'cvv2' => wc_clean($_POST['card_connect-card-cvc']),
+			'cvv2' => $checkoutFormData['cvv2'],
 			'amount' => $order->order_total * 100,
 			'currency' => "USD",
 			'orderid' => sprintf(__('%s - Order #%s', 'woocommerce'), esc_html(get_bloginfo('name', 'display')), $order->get_order_number()),
-			'name' => $card_name ? $card_name : trim($order->billing_first_name . ' ' . $order->billing_last_name),
+			'name' => $checkoutFormData['card_name'] ? $checkoutFormData['card_name'] : trim($order->billing_first_name . ' ' . $order->billing_last_name),
 			'street' => $order->billing_address_1,
 			'city' => $order->billing_city,
 			'region' => $order->billing_state,
@@ -626,17 +837,17 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 
 
 
-		// 4 cases to handle:
-		if ( $saved_card_id ) {
+		// 5 cases to handle:
+		if ( $checkoutFormData['saved_card_id'] ) {
 			// case 1:  user is paying by using a "saved card"
 			//			user must already be logged in to WP for this to be possible
 
 			// use 'profile' param, no 'token' or 'account number' to pass
-			$request['profile'] = "$profile_id/$saved_card_id";
+			$request['profile'] = $checkoutFormData['profile_id'] . '/' . $checkoutFormData['saved_card_id'];
 
 		}
 //		elseif ( $profile_id ) {
-		elseif ( $profile_id && $store_new_card ) {
+		elseif ( $checkoutFormData['profile_id'] && $checkoutFormData['store_new_card'] ) {
 			// case 2:  user is logged-in to WP and already has a profileid in USER meta
 			//          !!! FYI: this logic differs slightly from that for *Subscriptions* !!!
 			//
@@ -645,49 +856,42 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 			// Get the new card's 'acctid'
 			$profile_request = array(
 				'merchid'   => $this->api_credentials['mid'],
-				'profile'   => $profile_id,		// 20 digit profile_id to utilize a profile
-				'account'  	=> $token,
-				'cvv2'      => wc_clean($_POST['card_connect-card-cvc']),
-				'expiry'	=> preg_replace('/[^\d]/i','', wc_clean($_POST['card_connect-card-expiry'])),
-//					'amount'    => $order->order_total * 100,
-//					'currency'  => "USD",
-//					'orderid'   => sprintf(__('%s - Order #%s', 'woocommerce'), esc_html(get_bloginfo('name', 'display')), $order->get_order_number()),
-				'name'      => $card_name ? $card_name : trim( $order->billing_first_name . ' ' . $order->billing_last_name ),
+				'profile'   => $checkoutFormData['profile_id'],		// 20 digit profile_id to utilize a profile
+				'account'  	=> $checkoutFormData['token'],
+				'cvv2'      => $checkoutFormData['cvv2'],
+				'expiry'	=> $checkoutFormData['expiry'],
+				'name'      => $checkoutFormData['card_name'] ? $checkoutFormData['card_name'] : trim( $order->billing_first_name . ' ' . $order->billing_last_name ),
 				'street'    => $order->billing_address_1,
 				'city'      => $order->billing_city,
 				'region'    => $order->billing_state,
 				'country'   => $order->billing_country,
 				'postal'    => $order->billing_postcode,
-//					'capture'   => $this->mode === 'capture' ? 'Y' : 'N',
 				'frontendid'=> $this->front_end_id,
 			);
 
 
-			// we'll add this new 'saved card' to the USER meta
-			$new_account_id = $this->saved_cards->add_account_to_profile($user_id, $card_alias, $profile_request);
+			$new_account_id = $this->saved_cards->get_new_acctid($profile_request);
 
-
-//			$request['expiry'] = preg_replace('/[^\d]/i','', wc_clean($_POST['card_connect-card-expiry']));
-			$request['profile'] = "$profile_id/$new_account_id";	// 20 digit profile_id/acctid to utilize a profile
+			$request['profile'] = $checkoutFormData['profile_id'] . '/' . $new_account_id;	// 20 digit profile_id/acctid to utilize a profile
 
 		}
-		elseif ( !$profile_id && $store_new_card ) {
+		elseif ( !$checkoutFormData['profile_id'] && $checkoutFormData['store_new_card'] ) {
 			// case 3:  user is paying with a new card and wants to "save this card"
 			//			user is either NOT logged-in to WP or does NOT already have a profileid in USER meta
 
 
 			// we first need to...
 			// get the user's profileid
-			$request['expiry'] = preg_replace('/[^\d]/i','', wc_clean($_POST['card_connect-card-expiry']));
+			$request['expiry'] = $checkoutFormData['expiry'];
 			$request['profile'] = 'Y';		// 'Y' will create a new account profile
-			$request['account'] = $token;	// since we're using 'profile', 'account number' must be converted to a token
+			$request['account'] = $checkoutFormData['token'];	// since we're using 'profile', 'account number' must be converted to a token
 
 
 			// In the $payment_response handling below, we'll need to associate this new card with
 			// the profileid that gets returned in $payment_response.
 
 		}
-		elseif ( $profile_id && !$store_new_card ) {
+		elseif ( $checkoutFormData['profile_id'] && !$checkoutFormData['store_new_card'] ) {
 			// case 4: user is logged in
 			//		   user is manually entering a credit card number
 			//         example scenario: customer is changing payment method to a newer credit card number
@@ -697,27 +901,23 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 			// Get the new card's 'acctid'
 			$profile_request = array(
 				'merchid'   => $this->api_credentials['mid'],
-				'profile'   => $profile_id,		// 20 digit profile_id to utilize a profile
-				'account'  	=> $token,
-				'cvv2'      => wc_clean($_POST['card_connect-card-cvc']),
-				'expiry'	=> preg_replace('/[^\d]/i','', wc_clean($_POST['card_connect-card-expiry'])),
-//					'amount'    => $order->order_total * 100,
-//					'currency'  => "USD",
-//					'orderid'   => sprintf(__('%s - Order #%s', 'woocommerce'), esc_html(get_bloginfo('name', 'display')), $order->get_order_number()),
-				'name'      => $card_name ? $card_name : trim( $order->billing_first_name . ' ' . $order->billing_last_name ),
+				'profile'   => $checkoutFormData['profile_id'],		// 20 digit profile_id to utilize a profile
+				'account'  	=> $checkoutFormData['token'],
+				'cvv2'      => $checkoutFormData['cvv2'],
+				'expiry'	=> $checkoutFormData['expiry'],
+				'name'      => $checkoutFormData['card_name'] ? $checkoutFormData['card_name'] : trim( $order->billing_first_name . ' ' . $order->billing_last_name ),
 				'street'    => $order->billing_address_1,
 				'city'      => $order->billing_city,
 				'region'    => $order->billing_state,
 				'country'   => $order->billing_country,
 				'postal'    => $order->billing_postcode,
-//					'capture'   => $this->mode === 'capture' ? 'Y' : 'N',
 				'frontendid'=> $this->front_end_id,
 			);
 
 
 			$new_account_id = $this->saved_cards->get_new_acctid($profile_request);
 
-			$request['profile'] = "$profile_id/$new_account_id";	// 20 digit profile_id/acctid to utilize a profile
+			$request['profile'] = $checkoutFormData['profile_id'] . '/' . $new_account_id;	// 20 digit profile_id/acctid to utilize a profile
 		}
 		else {
 			// case 5:  user is simply paying with their card
@@ -727,23 +927,21 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 			//			user had NOT selected "use a saved card"
 
 
-			$request['expiry'] = preg_replace('/[^\d]/i','', wc_clean($_POST['card_connect-card-expiry']));
+			$request['expiry'] = $checkoutFormData['expiry'];
 			$request['profile'] = 'Y';		// 'Y' will create a new account profile
-			$request['account'] = $token;	// since we're using 'profile', 'account number' must be converted to a token
+			$request['account'] = $checkoutFormData['token'];	// since we're using 'profile', 'account number' must be converted to a token
 		}
 
 
 
 		// -----------------------------------------------------------------------
-		// !!! perform the cardconnect API request to actually make the payment
+		// perform the cardconnect API request to actually make the payment
 		// -----------------------------------------------------------------------
 
 		if ( !is_null( $this->get_cc_client() ) ) {
 			$payment_response = $this->get_cc_client()->authorizeTransaction($request);
 		} else {
-			wc_add_notice(__('Payment error: ', 'woothemes') . 'CardConnect is not configured! ', 'error');
-			$order->add_order_note( 'CardConnect is not configured!' );
-			return;
+			return $this->handleNoCardConnectConnection($order, true);
 		}
 
 
@@ -755,8 +953,8 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 		if ( (!$payment_response) || ('' === $payment_response) ) {
 			// got no response back from the CardConnect API endpoint request.
 			// likely that the hosting server is unable to initiate/complete the CURL request to the API.
-			wc_add_notice(__('Payment error: ', 'woothemes') . 'A critical server error prevented this transaction from completing. Please confirm your information and try again.', 'error');
-			$order->add_order_note(sprintf(__('CardConnect failed transaction. Response: %s', 'woocommerce'), 'CURL error?'));
+
+			$this->handleAuthorizationResponse_NoResponse($order, true);
 		}
 		elseif( ($payment_response['respstat']) && ('A' === $payment_response['respstat']) ) {
 			// 'A' response is for 'Approved'
@@ -765,30 +963,11 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 			if(!$order_verification['is_valid']){
 				// failed either the AVS or CVV checks, therefore void this transaction.
 
-				$request = array(
-					'merchid' 	=> $this->api_credentials['mid'],
-					'currency' 	=> 'USD',
-					'retref' 	=> $payment_response['retref'],
-					'frontendid'=> $this->front_end_id,
-				);
+				return $this->handleVerificationError($order, $order_verification, $payment_response['retref'], true);
 
-				if ( !is_null( $this->get_cc_client() ) ) {
-					$void_response = $this->get_cc_client()->voidTransaction($request);
-				} else {
-					wc_add_notice(__('Payment error: ', 'woothemes') . 'CardConnect is not configured! ', 'error');
-					$order->add_order_note( 'CardConnect is not configured!' );
-					return;
-				}
-
-				if($void_response['authcode'] === 'REVERS'){
-					$order->update_status('failed', __('Payment Failed', 'cardconnect-payment-gateway'));
-					foreach($order_verification['errors'] as $error){
-						$order->add_order_note(sprintf(__($error, 'woocommerce')));
-						wc_add_notice(__('Payment error: ', 'woothemes') . $error, 'error');
-					}
-					return;
-				}
 			}
+
+
 
 
 			// -----------------------------------------------------------------------
@@ -799,40 +978,46 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 			update_post_meta($order->id, '_wc_cardconnect_profileid', $payment_response['profileid']);
 			update_post_meta($order->id, '_wc_cardconnect_acctid', $payment_response['acctid']);
 
-			// save the cardconnect 'Retrieval Reference Number' as _transaction_id on the Order's post_meta
-			// update_post_meta($order->id, '_transaction_id', $response['retref']);	// dupe of '_transaction_id'
-			// https://docs.woothemes.com/document/subscriptions/develop/payment-gateway-integration/upgrade-guide-for-subscriptions-v2-0/#section-8
-			// payment_complete() will save _transaction_id
+
+			// payment_complete() will save _transaction_id to the ORDER META
 			$order->payment_complete($payment_response['retref']);
 
 			// -----------------------------------------------------------------------
 
 
+			// Visible via wp-admin > Order
+			$order->add_order_note(sprintf(__( 'CardConnect payment approved (ID: %s, Authcode: %s)', 'woocommerce'), $payment_response['retref'], $payment_response['authcode']));
+
 
 			// Reduce stock levels
-			$order->reduce_order_stock();
+			// This is handled within payment_complete() above !
+//			$order->reduce_order_stock();
 
 
 			// Clear the cart
 			$woocommerce->cart->empty_cart();
 
 
-			// 4 cases to handle:
-			if ( $saved_card_id ) {
+			// 5 cases to handle:
+			if ( $checkoutFormData['saved_card_id'] ) {
 				// case 1:  user paid by using a "saved card"
 
 				// $payment_response['profileid'] is already saved in USER meta
-				// $payment_response['acctid'] (aka 'saved card') is already saved in USER meta
+				// $payment_response['acctid'] (aka 'saved card') is already saved in ORDER meta in the above code
 			}
 //			elseif ( $profile_id ) {
-			elseif ( $profile_id && $store_new_card ) {
+			elseif ( $checkoutFormData['profile_id'] && $checkoutFormData['store_new_card'] ) {
 				// case 2:  user is logged-in to WP and already has a profileid in USER meta
 				//          !!! FYI: this logic differs slightly from that for *Subscriptions* !!!
 				//
 
-				// $payment_response['acctid'] (aka 'saved card') was already saved in USER meta in the above code
+				// $payment_response['acctid'] (aka 'saved card') was already saved in ORDER meta in the above code
+
+				// save the saved card's 'acctid' to the USER meta
+				$this->saved_cards->save_user_card($user_id, array($payment_response['acctid'] => $checkoutFormData['card_alias']));
+
 			}
-			elseif ( !$profile_id && $store_new_card ) {
+			elseif ( !$checkoutFormData['profile_id'] && $checkoutFormData['store_new_card'] ) {
 				// case 3:  user is paying with a new card and wants to "save this card"
 				//			user is either NOT logged-in to WP or does NOT already have a profileid in USER meta
 
@@ -840,9 +1025,10 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 				$this->saved_cards->set_user_profile_id($user_id, $payment_response['profileid']);
 
 				// save the saved card's 'acctid' to the USER meta
-				$this->saved_cards->save_user_card($user_id, array($payment_response['acctid'] => $card_alias));
+				$this->saved_cards->save_user_card($user_id, array($payment_response['acctid'] => $checkoutFormData['card_alias']));
+
 			}
-			elseif ( $profile_id && !$store_new_card ) {
+			elseif ( $checkoutFormData['profile_id'] && !$checkoutFormData['store_new_card'] ) {
 				// case 4: user is logged in
 				//		   user is manually entering a credit card number
 				//         example scenario: customer is changing payment method to a newer credit card number
@@ -864,8 +1050,6 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 
 
 
-			$order->add_order_note(sprintf(__( 'CardConnect payment approved (ID: %s, Authcode: %s)', 'woocommerce'), $payment_response['retref'], $payment_response['authcode']));
-
 			// Return thankyou redirect
 			return array(
 				'result' => 'success',
@@ -874,28 +1058,17 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 
 		}
 		elseif( ($payment_response['respstat']) && ('C' === $payment_response['respstat']) ) {
-			// 'C' response if for 'Declined'
-
-			$order->add_order_note(sprintf(__( 'CardConnect declined transaction. Response: %s', 'woocommerce'), $payment_response['resptext']));
-			$order->update_status('failed', __('Payment Declined', 'cardconnect-payment-gateway'));
-
-			wc_add_notice(__('Payment error: ', 'woothemes') . 'Order Declined : ' . $payment_response['resptext'], 'error');
-			return;
+			// 'C' response is for 'Declined'
+			return $this->handleAuthorizationResponse_Declined($order, $payment_response, true);
 		}
-		else{
-			// B - Retry
-
-			$order->add_order_note(sprintf(__( 'CardConnect failed transaction. Response: %s', 'woocommerce'), $payment_response['resptext']));
-			$order->update_status('failed', __('Payment Failed', 'cardconnect-payment-gateway'));
-
-			wc_add_notice(__('Payment error: ', 'woothemes') . 'An error prevented this transaction from completing. Please confirm your information and try again.', 'error');
-			return;
+		else {
+			// 'B' response is for 'Retry'
+			return $this->handleAuthorizationResponse_Retry($order, $payment_response, true);
 		}
 
 
 		// catch-all error
-		$order->update_status('failed', __('Payment Failed', 'cardconnect-payment-gateway'));
-		return;
+		return $this->handleAuthorizationResponse_DefaultError($order, true);
 
 	}
 
@@ -913,12 +1086,12 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 
 		// admin preference: Void on CVV failure. Void order if CVV2/CVC2/CID does not match.
 		if($this->verification['void_cvv'] === 'yes' && $response['cvvresp'] === 'N'){
-			$error[] = 'Error - Invalid CVV. Please confirm the supplied CVV information.';
+			$error[] = 'Invalid CVV. Please confirm the supplied CVV information.';
 		}
 
 		// admin preference: Void on AVS failure. Void order if Address and ZIP do not match.
 		if($this->verification['void_avs'] === 'yes' && $response['avsresp'] === 'N'){
-			$error[] = 'Error - Address verification failed. Please confirm the supplied billing information.';
+			$error[] = 'Address verification failed. Please confirm the supplied billing information.';
 		}
 
 		return array(

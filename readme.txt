@@ -28,9 +28,9 @@ The WooCommerce Subscriptions extension (v2.x) is fully supported.
 
 == Frequently Asked Questions ==
 
-= Does this plugin require that an SSL be installed? =
+= Does this plugin require that an SSL certificate be installed? =
 
-It is recommended that you install an SSL on your site for the checkout page, however the plugin does not require it.
+It is recommended that you install an SSL certificate on your site for the checkout page, however the plugin does not require it.
 
 = Is there an option for a sandbox account for testing? =
 
@@ -48,9 +48,14 @@ For further info or support, contact your CardConnect representative.
 
 Yes, we support both v2.x of the Subscriptions extension as well as the older v1.5.x .  We highly recommend that you use v2.x for best results.
 
+= Does this support the WooCommerce Pre-Orders extension? =
+
+Yes.
+
 == Changelog ==
 = 2.0.0 =
 * Major release to fully support the WooCommerce Subscriptions 2.x extension plugin for the WooCommerce store.
+* Support for WooCommerce Pre-Orders extension has also been added.
 
 = 1.0.5 =
 * Fix: Issue with error messages covering Card Connect fields.

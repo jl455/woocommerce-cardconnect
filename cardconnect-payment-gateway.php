@@ -3,7 +3,7 @@
  * Plugin Name: CardConnect Payment Gateway 2.0 BETA
  * Plugin URI: http://sofcorp.com/
  * Description: Accept credit card payments in your WooCommerce store!
- * Version: 2.0beta02
+ * Version: 2.0beta03
  * Author: SOF Inc <gregp@sofcorp.com>
  * Author URI: http://sofcorp.com
  * License: GNU General Public License v2
@@ -21,7 +21,7 @@ if(!defined('ABSPATH')){
 	exit; // Exit if accessed directly
 }
 
-define('WC_CARDCONNECT_VER', '0.5.0');
+define('WC_CARDCONNECT_VER', '2.0.0');
 define('WC_CARDCONNECT_PLUGIN_PATH', untrailingslashit(plugin_basename(__DIR__)));
 define('WC_CARDCONNECT_TEMPLATE_PATH', untrailingslashit(plugin_dir_path(__FILE__)) . '/templates/');
 define('WC_CARDCONNECT_PLUGIN_URL', untrailingslashit(plugins_url('', __FILE__)));
@@ -46,6 +46,8 @@ function CardConnectPaymentGateway_init(){
 	// Include Classes
 	include_once 'classes/class-wc-gateway-cardconnect.php';
 	include_once 'classes/class-wc-gateway-cardconnect-saved-cards.php';
+
+	// Include Class for WooCommerce Subscriptions extension
 	if(class_exists('WC_Subscriptions_Order')){
 
 		if ( ! function_exists( 'wcs_create_renewal_order' ) ) {
@@ -57,13 +59,22 @@ function CardConnectPaymentGateway_init(){
 		}
 	}
 
+	// Include Class for WooCommerce Pre-Orders extension
+	if(class_exists('WC_Pre_Orders')){
+		include_once 'classes/class-wc-gateway-cardconnect-addons.php';
+	}
+
+
 
 	/**
 	 * Add the Gateway to WooCommerce
 	 **/
 	add_filter('woocommerce_payment_gateways', 'woocommerce_add_gateway_CardConnectPaymentGateway');
 	function woocommerce_add_gateway_CardConnectPaymentGateway($methods){
+
+
 		if(class_exists('WC_Subscriptions_Order')){
+			// handling for WooCommerce Subscriptions extension
 
 			if ( ! function_exists( 'wcs_create_renewal_order' ) ) {
 				// Subscriptions 1.x
@@ -73,7 +84,13 @@ function CardConnectPaymentGateway_init(){
 				$methods[] = 'CardConnectPaymentGatewayAddons';
 			}
 
-		}else{
+		}
+		elseif(class_exists('WC_Pre_Orders')){
+			// handling for WooCommerce Pre-Orders extension
+			$methods[] = 'CardConnectPaymentGatewayAddons';
+		}
+		else {
+			// handling for plain-ole "simple product" type orders
 			$methods[] = 'CardConnectPaymentGateway';
 		}
 		return $methods;

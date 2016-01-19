@@ -13,9 +13,13 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 	 * @return void
 	 */
 	public function __construct(){
+
 		parent::__construct();
+
+		// handling for WooCommerce Subscriptions extension
 		if(class_exists('WC_Subscriptions_Order')){
 
+			// process subscription scheduled/renewal payments
 			add_action('woocommerce_scheduled_subscription_payment_' . $this->id, array($this, 'scheduled_subscription_payment'), 10, 2);
 
 
@@ -36,12 +40,23 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 			add_filter('woocommerce_subscription_payment_meta', array($this, 'add_subscription_payment_meta'), 10, 2);
 			add_filter('woocommerce_subscription_validate_payment_meta', array( $this, 'validate_subscription_payment_meta' ), 10, 2 );
 		}
+
+
+		// handling for WooCommerce Pre-Orders extension
+		if(class_exists('WC_Pre_Orders_Order')){
+
+			// process pre-order payments upon "release"
+			add_action( 'wc_pre_orders_process_pre_order_completion_payment_' . $this->id, array( $this, 'process_pre_order_release_payment' ) );
+		}
+
 	}
 
 
 	/**
 	 * Process the payment
-	 * If order contains subscriptions, use this class's process_subscription. If not, use the main class's process_payment function
+	 * If order contains subscriptions, use this class's process_subscription.
+	 * If order contains pre-order, use this class's process_pre_order.
+	 * Otherwise, use the parent class's process_payment function
 	 *
 	 * @param  int $order_id
 	 * @return array
@@ -57,6 +72,10 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 			return $this->process_subscription($order_id);
 
 		}
+		elseif ( WC_Pre_Orders_Order::order_contains_pre_order($order_id) ) {
+			// Processing pre-order
+			return $this->process_pre_order($order_id);
+		}
 		else {
 			// Processing regular product
 			return parent::process_payment($order_id);
@@ -64,87 +83,55 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 	}
 
 
-	/**
-	 * called from action: woocommerce_scheduled_subscription_renewal_{$id}
+
+	/***********************************************************************************************************
 	 *
-	 * @param $amount_to_charge float The amount to charge.
-	 * @param $order            WC_Order The WC_Order object of the order which the subscription was purchased in.
-	 * @return void
-	 */
-	public function scheduled_subscription_payment($amount_to_charge, $order){
+	 * CARDCONNECT API
+	 *
+	 ***********************************************************************************************************/
 
-		// Process the payment
-		$result = $this->process_subscription_payment( $order, $amount_to_charge );
-
-		// If the process results in error, then mark order as failed. If not, continue subscription
-		if ( is_wp_error( $result ) ) {
-			WC_Subscriptions_Manager::process_subscription_payment_failure_on_order( $order );
-		} else {
-			WC_Subscriptions_Manager::process_subscription_payments_on_order( $order );
-		}
-	}
 
 
 	/**
-	 * This is called when the subscription is INITIALLY purchased.
-	 * It is also called when the Customer changes their Payment Method
 	 *
-	 * //Saves the card, if needed, and activates the subscription.
+	 * !!! is the same for Subscriptions AND Pre-Orders
 	 *
-	 * @param int $order_id
-	 * @return array
 	 */
-	public function process_subscription($order_id){
-		global $woocommerce;
+	public function generate_cardconnect_request($order, $checkoutFormData=null) {
 
-
-		// -----------------------------------------------------------------------
-		// get details about the Order submitted at Checkout
-		// -----------------------------------------------------------------------
-		$order = new WC_Order($order_id);
-//		$user_id = get_current_user_id();
 		$user_id = $order->user_id;
 
-		$profile_id = $this->profiles_enabled ? $this->saved_cards->get_user_profile_id($user_id) : false;
 
-		// tokenized version of the user's credit card #
-		$token = isset( $_POST['card_connect_token'] ) ? wc_clean( $_POST['card_connect_token'] ) : false;
+		// these are the basics for a cardconnect API request
+		$request = array(
+			'merchid'   => $this->api_credentials['mid'],
+			'amount'    => $order->order_total * 100,
+			'currency'  => "USD",
+			'orderid'   => sprintf(__('%s - Order #%s', 'woocommerce'), esc_html(get_bloginfo('name', 'display')), $order->get_order_number()),
+			'name'      => trim( $order->billing_first_name . ' ' . $order->billing_last_name ),
+			'street'    => $order->billing_address_1,
+			'city'      => $order->billing_city,
+			'region'    => $order->billing_state,
+			'country'   => $order->billing_country,
+			'postal'    => $order->billing_postcode,
+			'capture'   => $this->mode === 'capture' ? 'Y' : 'N',
+			'frontendid'=> $this->front_end_id,
+		);
 
 
-		// correlates to the 'save this card' checkbox on the checkout form
-		$store_new_card = isset($_POST['card_connect-save-card']) ? wc_clean($_POST['card_connect-save-card']) : false;
-
-		// correlates to the 'card nickname' field on the checkout form
-		$card_alias = isset($_POST['card_connect-new-card-alias']) ? wc_clean($_POST['card_connect-new-card-alias']) : '';
-		if ( trim($card_alias) == '' ) {
-//			$date = date("Y-m-d H:i:s");
-			$date = date("Ymd-Hi");
-			$card_alias = $order->billing_last_name . '_' . $date;
+		if ( $checkoutFormData ) {
+			$saved_card_id = $checkoutFormData['saved_card_id'];
+			$profile_id = $checkoutFormData['profile_id'];
+			$card_name = $checkoutFormData['card_name'];
+			$store_new_card = $checkoutFormData['store_new_card'];
+			$card_alias = $checkoutFormData['card_alias'];
+			$cvv2 = $checkoutFormData['cvv2'];
+			$expiry = $checkoutFormData['expiry'];
+			$token = $checkoutFormData['token'];
 		} else {
-			$card_alias = trim($card_alias);
+			return $request;
 		}
 
-		// correlates to the 'cardholder name (if different)' field on the checkout form
-		$card_name = isset( $_POST['card_connect-card-name'] ) ? wc_clean( $_POST['card_connect-card-name'] ) : false;
-
-		// correlates to the 'use a saved card' field on the checkout form
-		$saved_card_id = isset( $_POST['card_connect-cards'] ) ? wc_clean( $_POST['card_connect-cards'] ) : false;
-
-
-
-		if(!$token && !$saved_card_id){
-			wc_add_notice(__('Payment error: ', 'woothemes') . 'Please make sure your card details have been entered correctly and that your browser supports JavaScript.', 'error');
-			return;
-		}
-
-
-
-		// -----------------------------------------------------------------------
-		// create the cardconnect API request
-		// -----------------------------------------------------------------------
-
-		// this will hold all of the params sent in the cardconnect API request
-		$request = array();
 
 		// 4 cases to handle:
 		if ( $saved_card_id ) {
@@ -170,8 +157,8 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 				'merchid'   => $this->api_credentials['mid'],
 				'profile'   => $profile_id,		// 20 digit profile_id to utilize a profile
 				'account'  	=> $token,
-				'cvv2'      => wc_clean($_POST['card_connect-card-cvc']),
-				'expiry'	=> preg_replace('/[^\d]/i','', wc_clean($_POST['card_connect-card-expiry'])),
+				'cvv2'      => $cvv2,
+				'expiry'	=> $expiry,
 				'name'      => $card_name ? $card_name : trim( $order->billing_first_name . ' ' . $order->billing_last_name ),
 				'street'    => $order->billing_address_1,
 				'city'      => $order->billing_city,
@@ -190,8 +177,9 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 				$new_account_id = $this->saved_cards->get_new_acctid($profile_request);
 			}
 
-//			$request['expiry'] = preg_replace('/[^\d]/i','', wc_clean($_POST['card_connect-card-expiry']));
 			$request['profile'] = "$profile_id/$new_account_id";	// 20 digit profile_id/acctid to utilize a profile
+			$request['expiry'] = $expiry;
+			$request['cvv2'] =  $cvv2;
 
 		}
 		elseif ( !$profile_id && $store_new_card ) {
@@ -200,8 +188,8 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 
 
 			// we'll create a new 'profile' with cardconnect
-			$request['expiry'] = preg_replace('/[^\d]/i','', wc_clean($_POST['card_connect-card-expiry']));
-			$request['cvv2'] =  wc_clean($_POST['card_connect-card-cvc']);
+			$request['expiry'] = $expiry;
+			$request['cvv2'] =  $cvv2;
 			$request['profile'] = 'Y';		// 'Y' will create a new account profile
 			$request['account'] = $token;	// since we're using 'profile', 'account number' must be converted to a token
 
@@ -218,27 +206,37 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 			//			user had NOT selected "use a saved card"
 
 
-			$request['expiry'] = preg_replace('/[^\d]/i','', wc_clean($_POST['card_connect-card-expiry']));
-			$request['cvv2'] =  wc_clean($_POST['card_connect-card-cvc']);
+			$request['expiry'] = $expiry;
+			$request['cvv2'] =  $cvv2;
 			$request['profile'] = 'Y';		// 'Y' will create a new account profile
 			$request['account'] = $token;	// since we're using 'profile', 'account number' must be converted to a token
 		}
 
-
-		// -----------------------------------------------------------------------
-		// !!! perform the cardconnect API request to actually make the payment
-		// -----------------------------------------------------------------------
-		$payment_response = $this->process_subscription_payment($order, $order->get_total(), $request);
+		return $request;
+	}
 
 
-		// -----------------------------------------------------------------------
-		// handle the response from the cardconnect API request
-		// -----------------------------------------------------------------------
-		if ( is_wp_error( $payment_response ) ) {
+	/**
+	 *
+	 * used for BOTH Subscriptions AND Pre-Orders
+	 *
+	 */
+	public function handle_cardconnect_response($payment_response, $order, $checkoutFormData) {
+
+		$user_id = $order->user_id;
+
+		$saved_card_id = $checkoutFormData['saved_card_id'];
+		$profile_id = $checkoutFormData['profile_id'];
+		$card_name = $checkoutFormData['card_name'];
+		$store_new_card = $checkoutFormData['store_new_card'];
+		$card_alias = $checkoutFormData['card_alias'];
+
+
+		if ( (isset($payment_response['result'])) && ($payment_response['result'] != 'success') ) {
 			// something went awry during the cardconnect API request
 
 			wc_add_notice(__('Payment error: ', 'woothemes') . 'An error prevented this transaction from completing. Please confirm your information and try again.', 'error');
-			$order->add_order_note(sprintf(__( 'CardConnect failed transaction. Response: %s', 'woocommerce'), $payment_response->get_error_message()));
+//			$order->add_order_note(sprintf(__( 'CardConnect failed transaction. Response: %s', 'woocommerce'), ''));
 
 			$order->update_status('failed', __('Payment Failed', 'cardconnect-payment-gateway'));
 			return;
@@ -246,17 +244,12 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 		else {
 			// received a success response from the cardconnect API request
 
-			// do the cart-related things that are not already done within process_subscription_payment();
-			// Remove cart
-			$woocommerce->cart->empty_cart();
-
-
 			// 4 cases to handle:
 			if ( $saved_card_id ) {
 				// case 1:  user paid by using a "saved card"
 
 				// $payment_response['profileid'] is already saved in USER meta
-				// $payment_response['acctid'] (aka 'saved card') is already saved in USER meta
+				// $payment_response['acctid'] (aka 'saved card') will be saved in ORDER meta
 			}
 			elseif ( $profile_id ) {
 				// case 2:  user is logged-in to WP and already has a profileid in USER meta
@@ -265,7 +258,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 				//				not when the purchase is for a *Subscription*. !!!
 				//
 
-				// $payment_response['acctid'] (aka 'saved card') was already saved in USER meta in the above code
+				// $payment_response['acctid'] (aka 'saved card') will be saved in ORDER meta
 			}
 			elseif ( !$profile_id && $store_new_card ) {
 				// case 3:  user is paying with a new card and wants to "save this card"
@@ -287,18 +280,89 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 				// save the 'profile_id' to the USER meta
 				$this->saved_cards->set_user_profile_id($user_id, $payment_response['profileid']);
 			}
-
-
-			// Activate the subscription
-			WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
-
-			// Return thankyou redirect
-			return array(
-				'result' => 'success',
-				'redirect' => $this->get_return_url($order)
-			);
+			return;
 
 		}
+
+	}
+
+
+
+	/***********************************************************************************************************
+	 *
+	 * SUBSCRIPTIONS
+	 *
+	 ***********************************************************************************************************/
+
+
+
+	/**
+	 * called from action: woocommerce_scheduled_subscription_renewal_{$id}
+	 *
+	 * @param $amount_to_charge float The amount to charge.
+	 * @param $order            WC_Order The WC_Order object of the order which the subscription was purchased in.
+	 * @return void
+	 */
+	public function scheduled_subscription_payment($amount_to_charge, $order){
+
+		// Process the payment
+		$result = $this->process_subscription_payment( $order, $amount_to_charge, null, false );
+
+		// If the process results in error, then mark order as failed. If not, continue subscription
+		if ( isset($result['result']) && ($result['result'] != 'success') ) {
+			WC_Subscriptions_Manager::process_subscription_payment_failure_on_order( $order );
+		} else {
+			WC_Subscriptions_Manager::process_subscription_payments_on_order( $order );
+		}
+	}
+
+
+	/**
+	 * This is called when the subscription is INITIALLY purchased.
+	 * It is also called when the Customer changes their Payment Method on a Subscription
+	 *
+	 * @param int $order_id
+	 * @return array
+	 */
+	public function process_subscription($order_id){
+
+		// -----------------------------------------------------------------------
+		// get details about the Order submitted at Checkout
+		// -----------------------------------------------------------------------
+		$order = new WC_Order($order_id);
+
+		$user_id = $order->user_id;
+
+		$checkoutFormData = parent::get_checkout_form_data($order, $user_id);
+
+		if ( !$checkoutFormData['token'] && !$checkoutFormData['saved_card_id'] ) {
+			parent::handleCheckoutFormDataError();
+		}
+
+
+
+		// -----------------------------------------------------------------------
+		// use the data from the checkout form to generate a cardconnect API request array
+		// -----------------------------------------------------------------------
+		$request = $this->generate_cardconnect_request($order, $checkoutFormData);
+
+
+
+		// -----------------------------------------------------------------------
+		// perform the cardconnect API request to actually make the *SUBSCRIPTIONS* payment
+		// -----------------------------------------------------------------------
+		$payment_response = $this->process_subscription_payment($order, $order->get_total(), $request, true);
+
+
+		// -----------------------------------------------------------------------
+		// handle the response from the cardconnect API request
+		// -----------------------------------------------------------------------
+		$this->handle_cardconnect_response($payment_response, $order, $checkoutFormData);
+
+
+		// should be either a "fail" or a "thankyou redirect" array
+		return $payment_response;
+
 	}
 
 
@@ -308,30 +372,20 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 	 * This is called DIRECTLY for RECURRING subscription payments.
 	 * This is also called BY process_subscription() for INITIAL subscription payments.
 	 *
-	 * Retrieve stored card and then process the transaction. If any errors, then return WP Error
-	 *
 	 *
 	 * @param mixed  $order
 	 * @param int    $amount       (default: 0)
-	 * @return true | WP Error
+	 * @return
 	 */
-	public function process_subscription_payment($order = '', $amount = 0, $additionalRequest=null){
+	public function process_subscription_payment($order = '', $amount = 0, $additionalRequest=null, $showNotices=false){
+		global $woocommerce;
 
-		$request = array(
-			'merchid'   => $this->api_credentials['mid'],
-//			'cvv2'      => wc_clean($_POST['card_connect-card-cvc']),	// will be provided in $additionalRequest when needed
-			'amount'    => $order->order_total * 100,
-			'currency'  => "USD",
-			'orderid'   => sprintf(__('%s - Order #%s', 'woocommerce'), esc_html(get_bloginfo('name', 'display')), $order->get_order_number()),
-			'name'      => trim( $order->billing_first_name . ' ' . $order->billing_last_name ),
-			'street'    => $order->billing_address_1,
-			'city'      => $order->billing_city,
-			'region'    => $order->billing_state,
-			'country'   => $order->billing_country,
-			'postal'    => $order->billing_postcode,
-			'capture'   => $this->mode === 'capture' ? 'Y' : 'N',
-			'frontendid'=> $this->front_end_id,
-		);
+
+		// -----------------------------------------------------------------------
+		// use the data from the checkout form to generate a cardconnect API request array
+		// -----------------------------------------------------------------------
+		$request = $this->generate_cardconnect_request($order);
+
 
 
 		// dave
@@ -389,25 +443,25 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 
 
 		// -----------------------------------------------------------------------
-		// !! check that cardconnect is configured in woocommerce and, if so, do the cardconnect API request !!
+		// check that cardconnect is configured in woocommerce and, if so, do the cardconnect API request !!
 		// -----------------------------------------------------------------------
 
 		if ( !is_null( $this->get_cc_client() ) ) {
 			$response = $this->get_cc_client()->authorizeTransaction($request);
 		} else {
-//			wc_add_notice(__('Payment error: ', 'woothemes') . 'CardConnect is not configured! ', 'error');
-			$order->add_order_note( 'CardConnect is not configured!' );
-			return new WP_Error( 'error', 'CardConnect is not configured!' );
+			return parent::handleNoCardConnectConnection($order, $showNotices);
 		}
 
 
+		// -----------------------------------------------------------------------
 		// handle the transaction response from the CardConnect API Rest Client
+		// -----------------------------------------------------------------------
 
 		if ( (!$response) || ('' === $response) ) {
 			// got no response back from the CardConnect API endpoint request.
 			// likely that the hosting server is unable to initiate/complete the CURL request to the API.
-			wc_add_notice(__('Payment error: ', 'woothemes') . 'A critical server error prevented this transaction from completing. Please confirm your information and try again.', 'error');
-			$order->add_order_note(sprintf(__('CardConnect failed transaction. Response: %s', 'woocommerce'), 'CURL error?'));
+
+			parent::handleAuthorizationResponse_NoResponse($order, $showNotices);
 		}
 		elseif( ($response['respstat']) && ('A' === $response['respstat']) ) {
 			// 'A' response is for 'Approved'
@@ -416,29 +470,8 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 			if(!$order_verification['is_valid']){
 				// failed either the AVS or CVV checks, therefore void this transaction.
 
-				$request = array(
-					'merchid' 	=> $this->api_credentials['mid'],
-					'currency' 	=> 'USD',
-					'retref' 	=> $response['retref'],
-					'frontendid'=> $this->front_end_id,
-				);
+				return parent::handleVerificationError($order, $order_verification, $response['retref'], $showNotices);
 
-				if ( !is_null( $this->get_cc_client() ) ) {
-					$void_response = $this->get_cc_client()->voidTransaction($request);
-				} else {
-//					wc_add_notice(__('Payment error: ', 'woothemes') . 'CardConnect is not configured! ', 'error');
-					$order->add_order_note( 'CardConnect is not configured!' );
-					return new WP_Error( 'error', 'CardConnect is not configured!' );
-				}
-
-				if($void_response['authcode'] === 'REVERS'){
-					$order->update_status('failed', __('Payment Failed', 'cardconnect-payment-gateway'));
-					foreach($order_verification['errors'] as $error){
-						$order->add_order_note(sprintf(__( $error, 'woocommerce')));
-//						wc_add_notice(__('Payment error: ', 'woothemes') . $error, 'error');
-					}
-					return new WP_Error( 'error', 'failed transaction ' );
-				}
 			}
 
 
@@ -458,47 +491,49 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 				update_post_meta($subscription->id, '_wc_cardconnect_acctid', $response['acctid']);
 			}
 
-			// save the cardconnect 'Retrieval Reference Number' as _transaction_id on the Order's post_meta
-			// update_post_meta($order->id, '_transaction_id', $response['retref']);	// dupe of '_transaction_id'
 			// https://docs.woothemes.com/document/subscriptions/develop/payment-gateway-integration/upgrade-guide-for-subscriptions-v2-0/#section-8
-			// payment_complete() will save _transaction_id
+			// payment_complete() will save _transaction_id to the ORDER META
 			$order->payment_complete($response['retref']);
 
 			// -----------------------------------------------------------------------
 
 
-
-			// Reduce stock levels
-			$order->reduce_order_stock();
-
 			$order->add_order_note(sprintf(__( 'CardConnect payment approved (ID: %s, Authcode: %s)', 'woocommerce'), $response['retref'], $response['authcode']));
 
-			return $response;
+			// clear the shopping cart contents
+			if ( $woocommerce->cart ) {
+				$woocommerce->cart->empty_cart();
+			}
+
+			// Reduce stock levels
+			// handled by payment_complete() call above
+//			$order->reduce_order_stock();
+
+			//--------------------------------
+			// !!! Activate the SUBSCRIPTION
+			//--------------------------------
+			WC_Subscriptions_Manager::activate_subscriptions_for_order( $order );
+
+
+			// Return thankyou redirect
+			return array(
+				'result' => 'success',
+				'redirect' => $this->get_return_url($order)
+			);
 
 		}
 		elseif( ($response['respstat']) && ('C' === $response['respstat']) ) {
-			// 'C' response if for 'Declined'
-
-			$order->add_order_note(sprintf(__( 'CardConnect declined transaction. Response: %s', 'woocommerce'), $response['resptext']));
-			$order->update_status('failed', __('Payment Declined', 'cardconnect-payment-gateway'));
-
-//			wc_add_notice(__('Payment error: ', 'woothemes') . 'Order Declined : ' . $response['resptext'], 'error');
-			return new WP_Error( 'error', 'Order Declined : ' . $response['resptext'] );
+			// 'C' response is for 'Declined'
+			return parent::handleAuthorizationResponse_Declined($order, $response, $showNotices);
 		}
 		else{
-			// B - Retry
-
-			$order->add_order_note(sprintf(__( 'CardConnect failed transaction. Response: %s', 'woocommerce'), $response['resptext']));
-			$order->update_status('failed', __('Payment Failed', 'cardconnect-payment-gateway'));
-
-//			wc_add_notice(__('Payment error: ', 'woothemes') . 'An error prevented this transaction from completing. Please confirm your information and try again.', 'error');
-			return new WP_Error( 'error', 'An error prevented this transaction from completing. Please confirm your information and try again.' );
+			// 'B' response is for 'Retry'
+			return parent::handleAuthorizationResponse_Retry($order, $response, $showNotices);
 		}
 
 
 		// catch-all error
-		$order->update_status('failed', __('Payment Failed', 'cardconnect-payment-gateway'));
-		return new WP_Error( 'error', 'failed transaction' );
+		return parent::handleAuthorizationResponse_DefaultError($order, $showNotices);
 
 	}
 
@@ -668,11 +703,231 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 
 				return true;
 			} else {
-				throw new Exception( 'New Payment Method\'s CardConnect ProfileID and Account ID are not valid!\nPlease try again' );
+				throw new Exception( 'New Payment Method\'s CardConnect ProfileID and Account ID are not valid!  Please try again' );
 			}
 
 		}
 	}
 
+
+
+
+
+	/***********************************************************************************************************
+	 *
+	 * PRE-ORDERS
+	 *
+	 ***********************************************************************************************************/
+
+
+
+
+	/**
+	 * determines whether we have an "upon release" or "up front" pre-order and chooses
+	 * correct function to prepare/process the payment.
+	 *
+	 * "upon release" pre-orders will route to process_pre_order_payment() for payment upon "release"
+	 * "up front" pre-orders route to parent::process_payment() to pay immediately.
+	 *
+	 */
+	public function process_pre_order($order_id) {
+		global $woocommerce;
+
+		if ( WC_Pre_Orders_Order::order_requires_payment_tokenization( $order_id ) ) {
+			// charge/pay when this order is "released"
+
+
+			// -----------------------------------------------------------------------
+			// get details about the Order submitted at Checkout
+			// -----------------------------------------------------------------------
+			$order = new WC_Order($order_id);
+
+			$user_id = $order->user_id;
+
+			$checkoutFormData = parent::get_checkout_form_data($order, $user_id);
+
+
+			if ( !$checkoutFormData['token'] && !$checkoutFormData['saved_card_id'] ) {
+				return parent::handleCheckoutFormDataError();
+			}
+
+
+
+			// -----------------------------------------------------------------------
+			// use the data from the checkout form to generate a cardconnect API request array
+			// -----------------------------------------------------------------------
+			$request = $this->generate_cardconnect_request($order, $checkoutFormData);
+
+
+			// !!!! let's set some $request params specific to "upon release" PRE-ORDERS
+			$request['capture'] = 'N';	// "prepare" instead of "process/charge" the order
+
+
+
+			// -----------------------------------------------------------------------
+			// perform the cardconnect API request to prepare for the eventual/future *PRE-ORDER* payment
+			// -----------------------------------------------------------------------
+
+			$prepare_payment_response = $this->process_pre_order_payment($order, $request, true);
+
+
+
+			// -----------------------------------------------------------------------
+			// handle the response from the cardconnect API request
+			// -----------------------------------------------------------------------
+			$this->handle_cardconnect_response($prepare_payment_response, $order, $checkoutFormData);
+
+
+			if ( $prepare_payment_response && !isset($prepare_payment_response['result']) ) {
+
+				// -----------------------------------------------------------------------
+				// updating META data
+				// -----------------------------------------------------------------------
+
+				update_post_meta($order->id, '_wc_cardconnect_last4', substr(trim($prepare_payment_response['account']), -4));
+				update_post_meta($order->id, '_wc_cardconnect_profileid', $prepare_payment_response['profileid']);
+				update_post_meta($order->id, '_wc_cardconnect_acctid', $prepare_payment_response['acctid']);
+
+				// -----------------------------------------------------------------------
+
+				$order->add_order_note(sprintf(__( 'CardConnect pre-order payment pre-approved (ID: %s, Authcode: %s)', 'woocommerce'), $prepare_payment_response['retref'], $prepare_payment_response['authcode']));
+
+
+
+
+				// clear the shopping cart
+				if ( $woocommerce->cart ) {
+					$woocommerce->cart->empty_cart();
+				}
+
+				//--------------------------------
+				// !!! activate the PRE-ORDER
+				//--------------------------------
+				WC_Pre_Orders_Order::mark_order_as_pre_ordered( $order );
+
+				// Reduce stock levels (this gets done by mark_order_as_pre_ordered() above
+				//$order->reduce_order_stock();
+
+
+				// Return thankyou redirect
+				return array(
+					'result' => 'success',
+					'redirect' => $this->get_return_url($order)
+				);
+			}
+			else {
+				// should be a "fail" array
+				return $prepare_payment_response;
+			}
+
+
+		} else {
+
+			// charge/pay this order "up front" AKA immediately upon checkout
+			return parent::process_payment($order_id);
+		}
+
+	}
+
+
+
+	/**
+	 * called for "upon release" pre-orders
+	 *
+	 * will be called by process_pre_order() with capture=N for "preparing/pre-authorizing" the pre-order
+	 * will be called by process_pre_order_release_payment() with capture=Y for "charging" the pre-order
+	 *
+	 */
+	public function process_pre_order_payment($order, $request, $showNotices=false) {
+
+		// -----------------------------------------------------------------------
+		// check that cardconnect is configured in woocommerce and, if so, do the cardconnect API request !!
+		// -----------------------------------------------------------------------
+
+		if ( !is_null( $this->get_cc_client() ) ) {
+			$response = $this->get_cc_client()->authorizeTransaction($request);
+		} else {
+			return parent::handleNoCardConnectConnection($order, $showNotices);
+		}
+
+
+		// -----------------------------------------------------------------------
+		// handle the transaction response from the CardConnect API Rest Client
+		// -----------------------------------------------------------------------
+
+		if ( (!$response) || ('' === $response) ) {
+			// got no response back from the CardConnect API endpoint request.
+			// likely that the hosting server is unable to initiate/complete the CURL request to the API.
+			parent::handleAuthorizationResponse_NoResponse($order, $showNotices);
+		}
+		elseif( ($response['respstat']) && ('A' === $response['respstat']) ) {
+			// 'A' response is for 'Approved'
+
+			$order_verification = $this->verify_customer_data($response);
+			if(!$order_verification['is_valid']){
+				// failed either the AVS or CVV checks, therefore void this transaction.
+
+				return parent::handleVerificationError($order, $order_verification, $response['retref'], $showNotices);
+
+			}
+			else{
+				return $response;
+			}
+
+		}
+		elseif( ($response['respstat']) && ('C' === $response['respstat']) ) {
+			// 'C' response is for 'Declined'
+			return parent::handleAuthorizationResponse_Declined($order, $response, $showNotices);
+		}
+		else{
+			// 'B' response is for 'Retry'
+			return parent::handleAuthorizationResponse_Retry($order, $response, $showNotices);
+		}
+
+
+		// catch-all error
+		return parent::handleAuthorizationResponse_DefaultError($order, $showNotices);
+
+	}
+
+
+
+	/**
+	 *
+	 * Called when the Pre-Order is "released"
+	 * triggered by action: wc_pre_orders_process_pre_order_completion_payment_
+	 *
+	 * @param $order
+	 */
+	public function process_pre_order_release_payment( $order ) {
+
+		$request = $this->generate_cardconnect_request($order);
+
+
+		// get the payment token and add it to the $request
+		$profileid = get_post_meta($order->id, '_wc_cardconnect_profileid', true);
+		$acctid = get_post_meta($order->id, '_wc_cardconnect_acctid', true);
+		$request['profile'] = "$profileid/$acctid";
+
+		// attempt to charge the transaction
+		$payment_response = $this->process_pre_order_payment($order, $request, false);
+
+
+		if ( isset($payment_response['retref']) && isset($payment_response['authcode']) ) {
+			// success!
+
+			$order->add_order_note(sprintf(__( 'CardConnect pre-order payment processed (ID: %s, Authcode: %s)', 'woocommerce'), $payment_response['retref'], $payment_response['authcode']));
+
+			// complete the order
+			// payment_complete() will save _transaction_id to the ORDER META
+			$order->payment_complete($payment_response['retref']);
+
+		} else {
+
+			// mark the order as failed
+			return parent::handleAuthorizationResponse_Retry($order, $payment_response, false);
+		}
+
+	}
 
 }

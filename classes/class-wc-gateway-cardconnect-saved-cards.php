@@ -55,7 +55,7 @@ class CardConnectSavedCards {
 
 
 	/**
-	 * Adds a 'saved card' (aka 'acctid') to the USER meta
+	 * Gets a new acctid and then adds this 'saved card' (aka 'acctid') to the USER meta
 	 * Returns the 'acctid'
 	 */
 	public function add_account_to_profile($user_id, $card_alias, $request){
