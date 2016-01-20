@@ -97,15 +97,18 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 	 * !!! is the same for Subscriptions AND Pre-Orders
 	 *
 	 */
-	public function generate_cardconnect_request($order, $checkoutFormData=null) {
+	public function generate_cardconnect_request($order, $amountToCharge=null, $checkoutFormData=null) {
 
 		$user_id = $order->user_id;
 
+		if ( is_null($amountToCharge) ) {
+			$amountToCharge = $order->order_total * 100;
+		}
 
 		// these are the basics for a cardconnect API request
 		$request = array(
 			'merchid'   => $this->api_credentials['mid'],
-			'amount'    => $order->order_total * 100,
+			'amount'    => $amountToCharge,
 			'currency'  => "USD",
 			'orderid'   => sprintf(__('%s - Order #%s', 'woocommerce'), esc_html(get_bloginfo('name', 'display')), $order->get_order_number()),
 			'name'      => trim( $order->billing_first_name . ' ' . $order->billing_last_name ),
@@ -344,7 +347,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 		// -----------------------------------------------------------------------
 		// use the data from the checkout form to generate a cardconnect API request array
 		// -----------------------------------------------------------------------
-		$request = $this->generate_cardconnect_request($order, $checkoutFormData);
+		$request = $this->generate_cardconnect_request($order, null, $checkoutFormData);
 
 
 
@@ -377,27 +380,15 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 	 * @param int    $amount       (default: 0)
 	 * @return
 	 */
-	public function process_subscription_payment($order = '', $amount = 0, $additionalRequest=null, $showNotices=false){
+	public function process_subscription_payment($order = '', $amountToCharge = 0, $additionalRequest=null, $showNotices=false){
 		global $woocommerce;
 
 
 		// -----------------------------------------------------------------------
 		// use the data from the checkout form to generate a cardconnect API request array
 		// -----------------------------------------------------------------------
-		$request = $this->generate_cardconnect_request($order);
+		$request = $this->generate_cardconnect_request($order, $amountToCharge, null);
 
-
-
-		// dave
-		// If the subscription has a 'free trial', the initial order will have an amount of 0.
-		// In order for the cardconnect API to accept amount=0, we need to set capture=N.
-		// This setup will then still allow for the credit card to be validated and stored with cardconnect
-		//   (and in the META data) so that the ensuing renewal orders for the subscription can
-		//   easily be processed once the free trial ends.
-
-		if ( $request['amount'] == 0 ) {
-			$request['capture'] = 'N';
-		}
 
 
 		// merge the $request params passed to this function with the local $request params
@@ -440,6 +431,21 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 			}
 
 		}
+
+
+		// dave
+		// If the subscription has a 'free trial', the initial order will have an amount of 0.
+		// In order for the cardconnect API to accept amount=0, we need to set capture=N.
+		// This setup will then still allow for the credit card to be validated and stored with cardconnect
+		//   (and in the META data) so that the ensuing renewal orders for the subscription can
+		//   easily be processed once the free trial ends.
+		// "Customer Change Payment Method" will also create an order with amount 0.
+
+		if ( $amountToCharge == 0 ) {
+			$request['capture'] = 'N';
+			$request['amount'] = 0;
+		}
+
 
 
 		// -----------------------------------------------------------------------
@@ -498,7 +504,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 			// -----------------------------------------------------------------------
 
 
-			$order->add_order_note(sprintf(__( 'CardConnect payment approved (ID: %s, Authcode: %s)', 'woocommerce'), $response['retref'], $response['authcode']));
+			$order->add_order_note(sprintf(__( 'CardConnect payment processed (ID: %s, Authcode: %s, Amount: %s)', 'woocommerce'), $response['retref'], $response['authcode'], $response['amount']));
 
 			// clear the shopping cart contents
 			if ( $woocommerce->cart ) {
@@ -576,7 +582,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 
 
 	/**
-	 * Update the customer_id for a subscription after using CardConnect to complete a payment to make up for
+	 * Update the meta data for a subscription after using CardConnect to complete a payment to make up for
 	 * an automatic renewal payment which previously failed.
 	 *
 	 * @param WC_Subscription $subscription The subscription for which the failing payment method relates.
@@ -756,7 +762,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 			// -----------------------------------------------------------------------
 			// use the data from the checkout form to generate a cardconnect API request array
 			// -----------------------------------------------------------------------
-			$request = $this->generate_cardconnect_request($order, $checkoutFormData);
+			$request = $this->generate_cardconnect_request($order, null, $checkoutFormData);
 
 
 			// !!!! let's set some $request params specific to "upon release" PRE-ORDERS
@@ -901,7 +907,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 	 */
 	public function process_pre_order_release_payment( $order ) {
 
-		$request = $this->generate_cardconnect_request($order);
+		$request = $this->generate_cardconnect_request($order, null, null);
 
 
 		// get the payment token and add it to the $request
@@ -916,7 +922,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 		if ( isset($payment_response['retref']) && isset($payment_response['authcode']) ) {
 			// success!
 
-			$order->add_order_note(sprintf(__( 'CardConnect pre-order payment processed (ID: %s, Authcode: %s)', 'woocommerce'), $payment_response['retref'], $payment_response['authcode']));
+			$order->add_order_note(sprintf(__( 'CardConnect pre-order payment processed (ID: %s, Authcode: %s, Amount: %s)', 'woocommerce'), $payment_response['retref'], $payment_response['authcode'], $payment_response['amount']));
 
 			// complete the order
 			// payment_complete() will save _transaction_id to the ORDER META

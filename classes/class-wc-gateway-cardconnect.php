@@ -986,7 +986,7 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 
 
 			// Visible via wp-admin > Order
-			$order->add_order_note(sprintf(__( 'CardConnect payment approved (ID: %s, Authcode: %s)', 'woocommerce'), $payment_response['retref'], $payment_response['authcode']));
+			$order->add_order_note(sprintf(__( 'CardConnect payment processed (ID: %s, Authcode: %s, Amount: %s)', 'woocommerce'), $payment_response['retref'], $payment_response['authcode'], $payment_response['amount']));
 
 
 			// Reduce stock levels
