@@ -467,7 +467,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 			// got no response back from the CardConnect API endpoint request.
 			// likely that the hosting server is unable to initiate/complete the CURL request to the API.
 
-			parent::handleAuthorizationResponse_NoResponse($order, $showNotices);
+			return parent::handleAuthorizationResponse_NoResponse($order, $showNotices);
 		}
 		elseif( ($response['respstat']) && ('A' === $response['respstat']) ) {
 			// 'A' response is for 'Approved'
@@ -524,7 +524,9 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 			// Return thankyou redirect
 			return array(
 				'result' => 'success',
-				'redirect' => $this->get_return_url($order)
+				'redirect' => $this->get_return_url($order),
+				'profileid' => $response['profileid'],
+				'acctid' => $response['acctid'],
 			);
 
 		}
@@ -864,7 +866,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 		if ( (!$response) || ('' === $response) ) {
 			// got no response back from the CardConnect API endpoint request.
 			// likely that the hosting server is unable to initiate/complete the CURL request to the API.
-			parent::handleAuthorizationResponse_NoResponse($order, $showNotices);
+			return parent::handleAuthorizationResponse_NoResponse($order, $showNotices);
 		}
 		elseif( ($response['respstat']) && ('A' === $response['respstat']) ) {
 			// 'A' response is for 'Approved'
