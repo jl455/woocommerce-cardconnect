@@ -65,7 +65,10 @@ class CardConnectSavedCards {
 		// 'acctid' is the "account identifier within a profile"
 		// in other words, it corresponds to the 'saved card' within that WP user's card connect Profile
 
-		$this->save_user_card($user_id, array( $acctid => $card_alias ));
+		if ( !is_null($acctid) ) {
+			$this->save_user_card($user_id, array( $acctid => $card_alias ));
+		}
+
 		return $acctid;
 	}
 
@@ -78,7 +81,11 @@ class CardConnectSavedCards {
 	 */
 	public function get_new_acctid($request) {
 		$response = $this->client->profileCreate($request);
-		return $response['acctid'];
+		if ( isset($response['acctid']) ) {
+			return $response['acctid'];
+		} else {
+			return null;
+		}
 	}
 
 }
