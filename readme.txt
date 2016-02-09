@@ -52,6 +52,10 @@ Yes, we support both v2.x of the Subscriptions extension as well as the older v1
 
 Yes.
 
+= Does this support all currencies supported by the WooCommerce store? =
+
+We support all WooCommerce currencies except the Ukranian Hryvnia.
+
 == Changelog ==
 = 2.0.0 =
 * Major release to fully support the WooCommerce Subscriptions 2.x extension plugin for the WooCommerce store.

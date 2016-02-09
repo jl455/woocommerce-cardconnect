@@ -752,7 +752,7 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 
 		$request = array(
 			'merchid' 	=> $this->api_credentials['mid'],
-			'currency' 	=> 'USD',
+			'currency' => $this->getCardConnectCurrencyCode($order->order_currency),
 			'retref' 	=> $retref,
 			'frontendid'=> $this->front_end_id,
 		);
@@ -783,7 +783,75 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 
 
 
+	/**
+	 * converts the WooCommerce store's currency code to the currency code expected by CardConnect API
+	 */
+	public function getCardConnectCurrencyCode($wc_currency_code = null) {
 
+		if ( is_null($wc_currency_code) ) {
+			// get the value of: 'wp-admin > WooCommerce > Settings > General > Currency'
+			$wc_currency_code = get_woocommerce_currency();
+		}
+
+		$cardconnect_currency_code = 'UNK';		// UNK = Unknown
+
+		// $wc_currency_code => $cardconnect_currency_code
+		// note: the !!! denotes those where the code differs btwn WooCommerce and CardConnect
+		$lookup = array(
+			'AED' => 'AED',		// United Arab Emirates Dirham
+			'ARS' => 'ARA', 	// !!! Argentina - Argentine Peso
+			'AUD' => 'AUD',		// Australian Dollars
+			'BDT' => 'BDT',		// Bangladeshi Taka
+			'BGN' => 'BGN',		// Bulgarian Lev
+			'BRL' => 'BRL', 	// Brazilian Real
+			'CAD' => 'CAD',		// Canadian Dollars
+			'CHF' => 'CHF',		// Swiss Franc
+			'CLP' => 'CLP',		// Chilean Peso
+			'CNY' => 'CNY',		// Chinese Yuan
+			'COP' => 'COP',		// Colombian Peso
+			'CZK' => 'CZK',		// Czech Koruna
+			'DKK' => 'DKK',		// Danish Krone
+			'DOP' => 'DOP',		// Dominican Peso
+			'EGP' => 'EGP',		// Egyptian Pound
+			'EUR' => 'EUR',		// Euros
+			'GBP' => 'GBP',		// Pounds Sterling
+			'HKD' => 'HKD',		// Hong Kong Dollar
+			'HRK' => 'CRK',		// !!! Croatia kuna
+			'HUF' => 'HUF',		// Hungarian Forint
+			'IDR' => 'IDR',		// Indonesia Rupiah
+			'ILS' => 'ILS',		// Israeli Shekel
+			'INR' => 'INR',		// Indian Rupee
+			'ISK' => 'ISK',		// Icelandic krona
+			'JPY' => 'JPY',		// Japanese Yen
+			'KES' => 'KES',		// Kenyan shilling
+			'LAK' => 'LAK',		// Lao Kip
+			'KRW' => 'KRW',		// South Korean Won
+			'MXN' => 'MXP',		// !!! Mexican Peso
+			'MYR' => 'MYR',		// Malaysian Ringgits
+			'NGN' => 'NGN',		// Nigerian Naira
+			'NOK' => 'NOK',		// Norwegian Krone
+			'NPR' => 'NPR',		// Nepali Rupee
+			'NZD' => 'NZD',		// New Zealand Dollar
+			'PHP' => 'PHP',		// Philippine Pesos
+			'PKR' => 'PKR',		// Pakistani Rupee
+			'PLN' => 'PLZ',		// !!! Polish Zloty
+			'PYG' => 'PYG',		// Paraguayan Guaraní
+			'RON' => 'RON',		// Romanian Leu
+			'RUB' => 'RUB',		// Russian Ruble
+			'SEK' => 'SEK',		// Swedish Krona
+			'SGD' => 'SGD',		// Singapore Dollar
+			'THB' => 'THB',		// Thai Baht
+			'TRY' => 'TRY',		// Turkish Lira
+			'TWD' => 'TWD',		// Taiwan New Dollars
+			'UAH' => 'UNK',		// !!! Ukrainian Hryvnia
+			'USD' => 'USD',		// US Dollars
+			'VND' => 'VND',		// Vietnamese Dong
+			'ZAR' => 'ZAR',		// South African rand
+		);
+
+		$cardconnect_currency_code = $lookup[$wc_currency_code];
+		return $cardconnect_currency_code;
+	}
 
 
 	/**
@@ -823,7 +891,7 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 			'merchid' => $this->api_credentials['mid'],
 			'cvv2' => $checkoutFormData['cvv2'],
 			'amount' => $order->order_total * 100,
-			'currency' => "USD",
+			'currency' => $this->getCardConnectCurrencyCode($order->order_currency),
 			'orderid' => sprintf(__('%s - Order #%s', 'woocommerce'), esc_html(get_bloginfo('name', 'display')), $order->get_order_number()),
 			'name' => $checkoutFormData['card_name'] ? $checkoutFormData['card_name'] : trim($order->billing_first_name . ' ' . $order->billing_last_name),
 			'street' => $order->billing_address_1,
@@ -986,7 +1054,7 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 
 
 			// Visible via wp-admin > Order
-			$order->add_order_note(sprintf(__( 'CardConnect payment processed (ID: %s, Authcode: %s, Amount: %s)', 'woocommerce'), $payment_response['retref'], $payment_response['authcode'], $payment_response['amount']));
+			$order->add_order_note(sprintf(__( 'CardConnect payment processed (ID: %s, Authcode: %s, Amount: %s)', 'woocommerce'), $payment_response['retref'], $payment_response['authcode'], get_woocommerce_currency_symbol() . ' ' . $payment_response['amount']));
 
 
 			// Reduce stock levels
@@ -1167,7 +1235,7 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 		$request = array(
 			'merchid' 	=> $this->api_credentials['mid'],
 			'amount' 	=> $amount * 100,
-			'currency' 	=> 'USD',
+			'currency' 	=> $this->getCardConnectCurrencyCode($order->order_currency),
 			'retref' 	=> $retref,
 			'frontendid'=> $this->front_end_id,
 		);
@@ -1182,7 +1250,7 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 		
 
 		if('A' === $response['respstat']){
-			$order->add_order_note(sprintf(__('CardConnect refunded $%s. Response: %s. Retref: %s', 'woocommerce'), $response['amount'], $response['resptext'], $response['retref']));
+			$order->add_order_note(sprintf(__('CardConnect refunded %s. Response: %s. Retref: %s', 'woocommerce'), get_woocommerce_currency_symbol() . ' ' . $response['amount'], $response['resptext'], $response['retref']));
 			return true;
 		}else{
 			throw new Exception( __( 'Refund was declined.', 'woocommerce' ) );

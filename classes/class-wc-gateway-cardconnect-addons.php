@@ -109,7 +109,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 		$request = array(
 			'merchid'   => $this->api_credentials['mid'],
 			'amount'    => $amountToCharge,
-			'currency'  => "USD",
+			'currency'	=> $this->getCardConnectCurrencyCode($order->order_currency),
 			'orderid'   => sprintf(__('%s - Order #%s', 'woocommerce'), esc_html(get_bloginfo('name', 'display')), $order->get_order_number()),
 			'name'      => trim( $order->billing_first_name . ' ' . $order->billing_last_name ),
 			'street'    => $order->billing_address_1,
@@ -504,7 +504,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 			// -----------------------------------------------------------------------
 
 
-			$order->add_order_note(sprintf(__( 'CardConnect payment processed (ID: %s, Authcode: %s, Amount: %s)', 'woocommerce'), $response['retref'], $response['authcode'], $response['amount']));
+			$order->add_order_note(sprintf(__( 'CardConnect payment processed (ID: %s, Authcode: %s, Amount: %s)', 'woocommerce'), $response['retref'], $response['authcode'], get_woocommerce_currency_symbol() . ' ' . $response['amount']));
 
 			// clear the shopping cart contents
 			if ( $woocommerce->cart ) {
@@ -924,7 +924,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 		if ( isset($payment_response['retref']) && isset($payment_response['authcode']) ) {
 			// success!
 
-			$order->add_order_note(sprintf(__( 'CardConnect pre-order payment processed (ID: %s, Authcode: %s, Amount: %s)', 'woocommerce'), $payment_response['retref'], $payment_response['authcode'], $payment_response['amount']));
+			$order->add_order_note(sprintf(__( 'CardConnect pre-order payment processed (ID: %s, Authcode: %s, Amount: %s)', 'woocommerce'), $payment_response['retref'], $payment_response['authcode'], get_woocommerce_currency_symbol() . ' ' . $payment_response['amount']));
 
 			// complete the order
 			// payment_complete() will save _transaction_id to the ORDER META
