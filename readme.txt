@@ -1,9 +1,9 @@
 === Woo Commerce CardConnect Payment Gateway ===
-Contributors: jle1
+Contributors: jle1, rexak
 Tags: woocommerce, payment, gateway, cardconnect
 Requires at least: 3.5
 Tested up to: 4.4
-Stable tag: 1.0.4
+Stable tag: 1.0.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,6 +43,17 @@ You may need to request that your hosting provider open certain ports. Specific 
 For further info or support, contact your CardConnect representative.
 
 == Changelog ==
+= 1.0.7 =
+* Fix: Corrected Merchant account field mapping for addresses
+
+= 1.0.6 =
+* Fix: Ensure 'site' field is populated in 'wp-admin > WooCommerce > Settings > Checkout > CardConnect' before performing
+  port checks.
+* Typo fix in checkout screen.
+
+= 1.0.5 =
+* Fix: Issue with error messages covering Card Connect fields.
+
 = 1.0.4 =
 * We now check that your server has the required ports open to allow communication with the CardConnect servers.  You'll
 see this information at the bottom of your (wp-admin > WooCommerce > Settings > Checkout > CardConnect) settings screen

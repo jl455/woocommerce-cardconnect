@@ -296,20 +296,26 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 
 		// cardconnect-specific checks
 		$warning_msgs = '';
-		// ensure that the sandbox and production ports are open on the server
-		foreach( $this->cc_ports as $env => $port ) {
-			$fsockURL = 'ssl://' . $this->site . '.' . $this->domain;
-			$fp = fsockopen($fsockURL, $port, $errno, $errstr, 5);
-			if (!$fp) {
-				// port is closed or blocked
+
+		if ( $this->site != '' ) {
+			// ensure that the sandbox and production ports are open on the server
+			foreach( $this->cc_ports as $env => $port ) {
+				$fsockURL = 'ssl://' . $this->site . '.' . $this->domain;
+				$fp = fsockopen($fsockURL, $port, $errno, $errstr, 5);
+				if (!$fp) {
+					// port is closed or blocked
 //				$warning_msgs .= "$fsockURL<br>";	// debug
-				$warning_msgs .= "Port $port is closed.<br>";
-				$warning_msgs .= "You will not be able to process transactions using the <i>$env</i> cardconnect environment.<br>";
-				$warning_msgs .= "Please request that your server admin or hosting provider opens port $port.<br><br>";
-			} else {
-				// port is open and available
-				fclose($fp);
+					$warning_msgs .= "Port $port is closed.<br>";
+					$warning_msgs .= "You will not be able to process transactions using the <i>$env</i> cardconnect environment.<br>";
+					$warning_msgs .= "First ensure that the 'Site' field is set and saved correctly above.<br>";
+					$warning_msgs .= "Then please request that your server admin or hosting provider opens port $port.<br><br>";
+				} else {
+					// port is open and available
+					fclose($fp);
+				}
 			}
+		} else {
+			$warning_msgs = "Ensure that you fill-in the 'Site' field (and then click 'Save changes') so that we can check your connection to the cardconnect servers.";
 		}
 
 
@@ -410,7 +416,7 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 			'currency'  => "USD",
 			'orderid'   => sprintf(__('%s - Order #%s', 'woocommerce'), esc_html(get_bloginfo('name', 'display')), $order->get_order_number()),
 			'name'      => $card_name ? $card_name : trim( $order->billing_first_name . ' ' . $order->billing_last_name ),
-			'street'    => $order->billing_address_1,
+			'address'    => $order->billing_address_1,
 			'city'      => $order->billing_city,
 			'region'    => $order->billing_state,
 			'country'   => $order->billing_country,

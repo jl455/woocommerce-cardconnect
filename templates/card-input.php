@@ -1,3 +1,4 @@
+<div class="js-card-connect-errors"></div> 
 <fieldset id="card_connect-cc-form">
 	<p class="form-row form-row-wide"><?php echo $description; ?></p>
 	<p class="form-row form-row-wide">
@@ -40,7 +41,6 @@
 			placeholder="•••• •••• •••• ••••"
 			<?php echo $is_sandbox ? 'value="4242 4242 4242 4242"' : '';?>
 			/>
-	<div class="js-card-connect-errors"></div>
 	</p>
 	<p class="form-row form-row-first">
 		<label for="card_connect-card-expiry">
@@ -71,6 +71,6 @@
 			name="card_connect-card-cvc"
 			<?php echo $is_sandbox ? 'value="123"' : ''; ?>
 			/>
-		<em><?php echo __( 'Your CVV number will not be stored on sever.', 'woocommerce' ); ?></em>
+		<em><?php echo __( 'Your CVV number will not be stored on our server.', 'woocommerce' ); ?></em>
 	</p>
 </fieldset>
