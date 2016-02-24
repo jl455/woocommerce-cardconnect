@@ -61,6 +61,14 @@ We support all WooCommerce currencies except the Ukranian Hryvnia.
 * Major release to fully support the WooCommerce Subscriptions 2.x extension plugin for the WooCommerce store.
 * Support for WooCommerce Pre-Orders extension has also been added.
 
+= 1.0.7 =
+* Fix: Corrected Merchant account field mapping for addresses
+
+= 1.0.6 =
+* Fix: Ensure 'site' field is populated in 'wp-admin > WooCommerce > Settings > Checkout > CardConnect' before performing
+  port checks.
+* Typo fix in checkout screen.
+
 = 1.0.5 =
 * Fix: Issue with error messages covering Card Connect fields.
 
