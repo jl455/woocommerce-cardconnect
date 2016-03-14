@@ -1,5 +1,5 @@
-=== Woo Commerce CardConnect Payment Gateway ===
-Contributors: jle1, rexak
+=== WooCommerce CardConnect Payment Gateway ===
+Contributors: jle1
 Tags: woocommerce, payment, gateway, cardconnect
 Requires at least: 3.5
 Tested up to: 4.4
@@ -11,7 +11,7 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 The WooCommerce CardConnect Payment Gateway allows you to accept Visa, MasterCard, American Express and Discover payments in your WordPress WooCommerce store. CardConnect payment processing tokenizes sensitive data, safeguarding your customers from a data breach and removing the burden of PCI compliance.
 
-CardConnect allows customers to checkout with a saved card.  Card details are saved on CardConnect servers and not on your site. The plugin supports the Woo Commerce Subscription extension.
+CardConnect allows customers to checkout with a saved card.  Card details are saved on CardConnect servers and not on your site. The plugin supports the WooCommerce Subscription extension.
 
 Visit [CardConnect](http://cardconnect.com) for more information.
 
