@@ -3,7 +3,7 @@ Contributors: jle1
 Tags: woocommerce, payment, gateway, cardconnect
 Requires at least: 3.5
 Tested up to: 4.4
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -57,6 +57,9 @@ Yes.
 We support all WooCommerce currencies except the Ukranian Hryvnia.
 
 == Changelog ==
+= 2.0.1 =
+* Fix: Improved handling for wp-admin CardConnect checkbox option 'Saved Cards - Allow customers to save payment information.'
+
 = 2.0.0 =
 * Major release to fully support the WooCommerce Subscriptions 2.x extension plugin for the WooCommerce store.
 * Support for WooCommerce Pre-Orders extension has also been added.
