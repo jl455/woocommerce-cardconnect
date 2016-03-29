@@ -281,7 +281,12 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 				//			user had NOT selected "use a saved card"
 
 				// save the 'profile_id' to the USER meta
-				$this->saved_cards->set_user_profile_id($user_id, $payment_response['profileid']);
+				if (isset($this->saved_cards)) {
+					// if the WP-admin cardconnect setting for 'Saved Cards - allow customers to save payment info' is
+					// CHECKED, then we'll have a saved_cards object otherwise we will not.
+
+					$this->saved_cards->set_user_profile_id($user_id, $payment_response['profileid']);
+				}
 			}
 			return;
 
