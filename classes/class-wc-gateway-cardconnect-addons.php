@@ -72,7 +72,7 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 			return $this->process_subscription($order_id);
 
 		}
-		elseif ( WC_Pre_Orders_Order::order_contains_pre_order($order_id) ) {
+		elseif ( (class_exists('WC_Pre_Orders_Order')) && (WC_Pre_Orders_Order::order_contains_pre_order($order_id)) ) {
 			// Processing pre-order
 			return $this->process_pre_order($order_id);
 		}
