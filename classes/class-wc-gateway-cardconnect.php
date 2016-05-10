@@ -23,7 +23,7 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 	private $registration_enabled;
 	public $profiles_enabled;
 	public $saved_cards;
-	public $front_end_id = "woocommerce";	// to be sent in every cardConnect API request as field "frontendid"
+	public $front_end_id = "13";	// to be sent in every cardConnect API request as field "frontendid"
 
 
 	/**

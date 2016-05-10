@@ -3,7 +3,7 @@ Contributors: jle1
 Tags: woocommerce, payment, gateway, cardconnect
 Requires at least: 3.5
 Tested up to: 4.5
-Stable tag: 2.0.2
+Stable tag: 2.0.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -57,6 +57,9 @@ Yes.
 We support all WooCommerce currencies except the Ukranian Hryvnia.
 
 == Changelog ==
+= 2.0.3 =
+* Minor CardConnect API update
+
 = 2.0.2 =
 * Fix: Fixed detection of whether the Pre-Orders extension is installed or not.
 
