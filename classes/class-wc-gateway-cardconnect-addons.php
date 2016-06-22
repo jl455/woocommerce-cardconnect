@@ -313,6 +313,10 @@ class CardConnectPaymentGatewayAddons extends CardConnectPaymentGateway{
 	 */
 	public function scheduled_subscription_payment($amount_to_charge, $order){
 
+		// Ensure that $amount_to_charge has a decimal point!  CardConnect API interprets an amount value of 35
+		// as 0.35 when it actually should represent 35.00 !
+		$amount_to_charge = number_format($amount_to_charge, 2);
+
 		// Process the payment
 		$result = $this->process_subscription_payment( $order, $amount_to_charge, null, false );
 
