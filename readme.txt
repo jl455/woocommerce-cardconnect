@@ -16,6 +16,7 @@ CardConnect allows customers to checkout with a saved card.  Card details are sa
 Visit [CardConnect](http://cardconnect.com) for more information.
 
 Please note that WooCommerce (v2.1+) must be installed and active.
+The latest version of WooCommerce (v2.6) is supported.
 
 The WooCommerce Subscriptions extension (v2.x) is fully supported.
 
