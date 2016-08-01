@@ -21,7 +21,7 @@ if(!defined('ABSPATH')){
 	exit; // Exit if accessed directly
 }
 
-define('WC_CARDCONNECT_VER', '2.0.4');
+define('WC_CARDCONNECT_VER', '2.0.5');
 define('WC_CARDCONNECT_PLUGIN_PATH', untrailingslashit(plugin_basename(__DIR__)));
 define('WC_CARDCONNECT_TEMPLATE_PATH', untrailingslashit(plugin_dir_path(__FILE__)) . '/templates/');
 define('WC_CARDCONNECT_PLUGIN_URL', untrailingslashit(plugins_url('', __FILE__)));

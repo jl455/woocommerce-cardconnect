@@ -278,24 +278,23 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 	 * the form_fields so that the msgs are easily visible and right near the 'save' button.
 	 *
 	 */
-	public function generate_settings_html( $form_fields = array() ) {
-		if ( empty( $form_fields ) ) {
+    public function generate_settings_html( $form_fields = array(), $echo = true ) {
+
+        if ( empty( $form_fields ) ) {
 			$form_fields = $this->get_form_fields();
 		}
 
-		$html = '';
-		foreach ( $form_fields as $k => $v ) {
 
-			if ( ! isset( $v['type'] ) || ( $v['type'] == '' ) ) {
-				$v['type'] = 'text'; // Default to "text" field type.
-			}
+        $html = '';
+        foreach ( $form_fields as $k => $v ) {
+            $type = $this->get_field_type( $v );
 
-			if ( method_exists( $this, 'generate_' . $v['type'] . '_html' ) ) {
-				$html .= $this->{'generate_' . $v['type'] . '_html'}( $k, $v );
-			} else {
-				$html .= $this->{'generate_text_html'}( $k, $v );
-			}
-		}
+            if ( method_exists( $this, 'generate_' . $type . '_html' ) ) {
+                $html .= $this->{'generate_' . $type . '_html'}( $k, $v );
+            } else {
+                $html .= $this->generate_text_html( $k, $v );
+            }
+        }
 
 
 		// cardconnect-specific checks
@@ -333,7 +332,11 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 			$html .= '<td class="forminp" style="color: red; font-weight: bold;">' . $warning_msgs . '</td></tr>';
 		}
 
-		echo $html;
+        if ( $echo ) {
+            echo $html;
+        } else {
+            return $html;
+        }
 	}
 
 

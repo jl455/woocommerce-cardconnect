@@ -3,7 +3,7 @@ Contributors: jle1
 Tags: woocommerce, payment, gateway, cardconnect
 Requires at least: 3.5
 Tested up to: 4.5.3
-Stable tag: 2.0.4
+Stable tag: 2.0.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,9 @@ Yes.
 We support all WooCommerce currencies except the Ukranian Hryvnia.
 
 == Changelog ==
+= 2.0.5 =
+* Fix: Synchronize a custom function, generate_settings_html(), with recent updates to the WooCommerce version.
+
 = 2.0.4 =
 * Fix: Renewal Order amounts for subscriptions could be incorrect if the payment amount was a whole number.
 
