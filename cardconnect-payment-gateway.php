@@ -1,27 +1,27 @@
 <?php
 /**
  * Plugin Name: CardConnect Payment Gateway
- * Plugin URI: http://sofcorp.com/
+ * Plugin URI: https://wordpress.org/plugins/cardconnect-payment-module
  * Description: Accept credit card payments in your WooCommerce store!
- * Version: 2.0.5
- * Author: SOF Inc <gregp@sofcorp.com>
- * Author URI: http://sofcorp.com
+ * Version: 2.0.6
+ * Author: CardConnect <jle@cardconnect.com>
+ * Author URI: https://cardconnect.com
  * License: GNU General Public License v2
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  *
- * @version 2.0
- * @author Sof, Inc
+ * @version 2.0.6
+ * @author CardConnect
  */
 
 /*
-	Copyright: © 2016 SOF Inc <gregp@sofcorp.com>.
+	Copyright: © 2016 CardConnect <jle@cardconnect.com>
 */
 
 if(!defined('ABSPATH')){
 	exit; // Exit if accessed directly
 }
 
-define('WC_CARDCONNECT_VER', '2.0.5');
+define('WC_CARDCONNECT_VER', '2.0.6');
 define('WC_CARDCONNECT_PLUGIN_PATH', untrailingslashit(plugin_basename(__DIR__)));
 define('WC_CARDCONNECT_TEMPLATE_PATH', untrailingslashit(plugin_dir_path(__FILE__)) . '/templates/');
 define('WC_CARDCONNECT_PLUGIN_URL', untrailingslashit(plugins_url('', __FILE__)));
