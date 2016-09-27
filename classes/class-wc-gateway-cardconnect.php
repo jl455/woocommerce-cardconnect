@@ -273,6 +273,8 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 	/**
 	 *
 	 * override of same function in /plugins/woocommerce/includes/abstracts/abstract-wc-settings-api.php
+     *
+     * note the custom handling for older version of WC v2.5.5 !
 	 *
 	 * some cardconnect-specific checks are performed and we then append any warning msgs to the bottom of
 	 * the form_fields so that the msgs are easily visible and right near the 'save' button.
@@ -280,21 +282,47 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 	 */
     public function generate_settings_html( $form_fields = array(), $echo = true ) {
 
+
         if ( empty( $form_fields ) ) {
 			$form_fields = $this->get_form_fields();
 		}
 
+        // custom handling to maintain backwards compatibility with older version of WC (v2.5.x)
+        $wcPluginData = WC()->version;
+        if ( stripos($wcPluginData, '2.5') !== false ) {
 
-        $html = '';
-        foreach ( $form_fields as $k => $v ) {
-            $type = $this->get_field_type( $v );
+            // WC 2.5.5
 
-            if ( method_exists( $this, 'generate_' . $type . '_html' ) ) {
-                $html .= $this->{'generate_' . $type . '_html'}( $k, $v );
-            } else {
-                $html .= $this->generate_text_html( $k, $v );
+            $html = '';
+            foreach ( $form_fields as $k => $v ) {
+
+                if ( ! isset( $v['type'] ) || ( $v['type'] == '' ) ) {
+                    $v['type'] = 'text'; // Default to "text" field type.
+                }
+
+                if ( method_exists( $this, 'generate_' . $v['type'] . '_html' ) ) {
+                    $html .= $this->{'generate_' . $v['type'] . '_html'}( $k, $v );
+                } else {
+                    $html .= $this->{'generate_text_html'}( $k, $v );
+                }
+            }
+
+        } else {
+
+            // WC v2.6+
+
+            $html = '';
+            foreach ( $form_fields as $k => $v ) {
+                $type = $this->get_field_type( $v );
+
+                if ( method_exists( $this, 'generate_' . $type . '_html' ) ) {
+                    $html .= $this->{'generate_' . $type . '_html'}( $k, $v );
+                } else {
+                    $html .= $this->generate_text_html( $k, $v );
+                }
             }
         }
+
 
 
 		// cardconnect-specific checks
@@ -309,7 +337,7 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 					// port is closed or blocked
 //				$warning_msgs .= "$fsockURL<br>";	// debug
 					$warning_msgs .= "Port $port is closed.<br>";
-					$warning_msgs .= "You will not be able to process transactions using the <i>$env</i> cardconnect environment.<br>";
+					$warning_msgs .= "You will not be able to process transactions using the <i>$env</i> CardConnect environment.<br>";
 					$warning_msgs .= "First ensure that the 'Site' field is set and saved correctly above.<br>";
 					$warning_msgs .= "Then please request that your server admin or hosting provider opens port $port.<br><br>";
 				} else {
@@ -318,7 +346,7 @@ class CardConnectPaymentGateway extends WC_Payment_Gateway {
 				}
 			}
 		} else {
-			$warning_msgs = "Ensure that you fill-in the 'Site' field (and then click 'Save changes') so that we can check your connection to the cardconnect servers.";
+			$warning_msgs = "Ensure that you fill-in the 'Site' field (and then click 'Save changes') so that we can check your connection to the CardConnect servers.";
 		}
 
 
